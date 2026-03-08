@@ -151,8 +151,8 @@ async function fetchRSS(url, src, srcLabel) {
 const RSS_SOURCES = [
   // Company blogs
   { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog" },
-  { url:"https://www.anthropic.com/rss.xml",              src:"Anthropic",   label:"Anthropic Blog" },
-  { url:"https://deepmind.google/discover/blog/rss/",     src:"DeepMind",    label:"DeepMind Blog" },
+  { url:"https://www.anthropic.com/news/rss.xml",              src:"Anthropic",   label:"Anthropic Blog" },
+  { url:"https://deepmind.google/blog/rss/feed.xml",     src:"DeepMind",    label:"DeepMind Blog" },
   { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog" },
   // News
   { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI" },
@@ -160,7 +160,7 @@ const RSS_SOURCES = [
   { url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", src:"TheVerge", label:"The Verge AI" },
   { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI" },
   { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review" },
-  { url:"https://feeds.feedburner.com/infoq/news",        src:"InfoQ",       label:"InfoQ" },
+  { url:"https://feed.infoq.com/",        src:"InfoQ",       label:"InfoQ" },
 ];
 
 // ── Main aggregator ────────────────────────────────────────────────
