@@ -2,7 +2,11 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import Parser from "rss-parser";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app    = express();
 const parser = new Parser({ timeout: 10000 });
 const PORT   = 3001;
@@ -13,25 +17,37 @@ app.use(express.json());
 const CACHE = { items: [], lastFetch: 0 };
 const CACHE_TTL = 60_000;
 
+// ── Bookmarks storage ─────────────────────────────────────────────
+const BOOKMARKS_FILE = path.join(__dirname, "bookmarks.json");
+function loadBookmarks() {
+  try {
+    if (fs.existsSync(BOOKMARKS_FILE)) {
+      return JSON.parse(fs.readFileSync(BOOKMARKS_FILE, "utf8"));
+    }
+  } catch(e) { console.warn("Could not load bookmarks:", e.message); }
+  return {};
+}
+function saveBookmarks(bm) {
+  try { fs.writeFileSync(BOOKMARKS_FILE, JSON.stringify(bm, null, 2)); }
+  catch(e) { console.warn("Could not save bookmarks:", e.message); }
+}
+let BOOKMARKS = loadBookmarks(); // { [itemId]: itemObject }
+
 // ── AI keyword filter ─────────────────────────────────────────────
 const AI_KW = [
-  // Models & companies
   "llm","gpt","claude","gemini","openai","anthropic","mistral","llama","grok",
   "deepseek","qwen","phi-","falcon","bloom","palm","bard","copilot","chatgpt",
   "deepmind","openai","hugging face","huggingface","nvidia","groq","perplexity",
   "midjourney","sora","runway","stability","cohere","xai","inflection","adept",
-  // Tech terms
   "artificial intelligence"," ai ","ai-","machine learning","deep learning",
   "neural network","transformer","diffusion","embedding","inference","fine-tun",
   "rlhf","rag","retrieval","vector","multimodal","foundation model","language model",
   "generative ai","computer vision","nlp","natural language","reinforcement learning",
   "alignment","hallucin","benchmark","dataset","parameter","token","attention",
   "latent","autoregressive","quantiz","distillation","lora","prompt","agent",
-  // Products & tools
   "cursor","replit","github copilot","tabnine","codewhisperer","devin","bolt",
   "v0 ","lovable","vercel ai","langchain","llamaindex","autogpt","babyagi",
   "stable diffusion","dall-e","dall·e","imagen","firefly","whisper","elevenlabs",
-  // Topics
   "agi","superintelligence","ai safety","ai regulation","ai policy","ai ethics",
   "ai startup","ai funding","ai research","ai model","ai tool","ai agent",
   "ai generated","ai powered","ai based","ai driven","large model","small model",
@@ -61,7 +77,6 @@ const safeText = t => (t||"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
 
 // ── FETCHERS ──────────────────────────────────────────────────────
 
-// 1. Hacker News
 async function fetchHN() {
   const res = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json", {signal:AbortSignal.timeout(10000)});
   const ids = (await res.json()).slice(0, 200);
@@ -78,7 +93,6 @@ async function fetchHN() {
     }));
 }
 
-// 2. arXiv
 async function fetchArxiv() {
   const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=80", {signal:AbortSignal.timeout(12000)});
   const text = await res.text();
@@ -95,7 +109,6 @@ async function fetchArxiv() {
   }).filter(e=>e.title);
 }
 
-// 3. Dev.to
 async function fetchDevTo() {
   const res = await fetch("https://dev.to/api/articles?tag=ai&per_page=30&top=1", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
@@ -107,7 +120,6 @@ async function fetchDevTo() {
   }));
 }
 
-// 4. Dev.to ML tag
 async function fetchDevToML() {
   const res = await fetch("https://dev.to/api/articles?tag=machinelearning&per_page=20&top=1", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
@@ -119,7 +131,6 @@ async function fetchDevToML() {
   }));
 }
 
-// 5. Lobste.rs
 async function fetchLobsters() {
   const res = await fetch("https://lobste.rs/t/ai.json", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
@@ -132,7 +143,6 @@ async function fetchLobsters() {
   }));
 }
 
-// 6. GitHub Trending (scrape JSON)
 async function fetchGitHub() {
   const res = await fetch("https://api.github.com/search/repositories?q=topic:llm+topic:artificial-intelligence&sort=stars&order=desc&per_page=20", {
     headers:{"Accept":"application/vnd.github.v3+json","User-Agent":"pulse-app/1.0"},
@@ -147,7 +157,6 @@ async function fetchGitHub() {
   }));
 }
 
-// 7. RSS helper
 async function fetchRSS(url, src, srcLabel) {
   const feed = await parser.parseURL(url);
   return (feed.items||[])
@@ -163,59 +172,48 @@ async function fetchRSS(url, src, srcLabel) {
 }
 
 const RSS_SOURCES = [
-  // Company blogs
   { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog" },
-  { url:"https://www.anthropic.com/news/rss.xml",              src:"Anthropic",   label:"Anthropic Blog" },
-  { url:"https://deepmind.google/blog/rss/feed.xml",     src:"DeepMind",    label:"DeepMind Blog" },
+  { url:"https://www.anthropic.com/news/rss.xml",         src:"Anthropic",   label:"Anthropic Blog" },
+  { url:"https://deepmind.google/blog/rss/feed.xml",      src:"DeepMind",    label:"DeepMind Blog" },
   { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog" },
-  // News
   { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI" },
   { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI" },
   { url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", src:"TheVerge", label:"The Verge AI" },
   { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI" },
   { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review" },
-  { url:"https://feed.infoq.com/",        src:"InfoQ",       label:"InfoQ" },
+  { url:"https://feed.infoq.com/",                        src:"InfoQ",       label:"InfoQ" },
 ];
 
 // ── Main aggregator ────────────────────────────────────────────────
 async function fetchAll() {
   console.log("🔄 Fetching all sources…");
-
   const results = await Promise.allSettled([
-    fetchHN(),
-    fetchArxiv(),
-    fetchDevTo(),
-    fetchDevToML(),
-    fetchLobsters(),
-    fetchGitHub(),
+    fetchHN(), fetchArxiv(), fetchDevTo(), fetchDevToML(),
+    fetchLobsters(), fetchGitHub(),
     ...RSS_SOURCES.map(s => fetchRSS(s.url, s.src, s.label)),
   ]);
-
   const labels = ["HN","arXiv","Dev.to(AI)","Dev.to(ML)","Lobste.rs","GitHub",...RSS_SOURCES.map(s=>s.label)];
-
   const items = results
     .filter(r => r.status==="fulfilled")
     .flatMap(r => r.value)
     .map(i => ({ ...i, heat: heatScore(i.score, i.comments, i.src) }));
-
   results.forEach((r,i) => {
     if(r.status==="rejected") console.warn(`⚠  ${labels[i]} failed:`, r.reason?.message);
     else console.log(`✓  ${labels[i]}: ${r.value.length} items`);
   });
-
-  // Deduplicate
   const seen = new Set();
   const unique = items.filter(i => {
     if(!i.title || seen.has(i.id)) return false;
     seen.add(i.id); return true;
   });
-
   unique.sort((a,b) => b.time - a.time);
   console.log(`✅ Total: ${unique.length} items\n`);
   return unique;
 }
 
 // ── Routes ─────────────────────────────────────────────────────────
+
+// Feed
 app.get("/feed", async (req, res) => {
   try {
     const now = Date.now();
@@ -231,9 +229,88 @@ app.get("/feed", async (req, res) => {
   }
 });
 
+// Health
 app.get("/health", (_, res) => res.json({ ok:true, items:CACHE.items.length, lastFetch:CACHE.lastFetch }));
 
-// Keep-alive + auto refresh cache every 5 minutes
+// ── AI SUMMARY ────────────────────────────────────────────────────
+// POST /summarize  { title, sum, src, type }
+// Returns { summary: "…" }
+app.post("/summarize", async (req, res) => {
+  const { title, sum, src, type } = req.body || {};
+  if (!title) return res.status(400).json({ error: "title required" });
+
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
+
+  try {
+    const prompt = `You are a concise AI news analyst. Given this article:
+
+Title: ${title}
+Source: ${src || "unknown"}
+Category: ${type || "unknown"}
+Existing snippet: ${sum || "N/A"}
+
+Write a 2-3 sentence sharp, insightful summary that:
+- Explains WHY this matters to AI practitioners/researchers
+- Highlights the key technical detail or implication
+- Is written in plain English, no hype
+
+Reply with ONLY the summary, no preamble.`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 200,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(502).json({ error: `Claude API error: ${err}` });
+    }
+
+    const data = await response.json();
+    const summary = data.content?.[0]?.text?.trim() || "Could not generate summary.";
+    res.json({ summary });
+  } catch(e) {
+    console.error("Summarize error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── BOOKMARKS ─────────────────────────────────────────────────────
+// GET  /bookmarks          → { bookmarks: [item, …] }
+app.get("/bookmarks", (req, res) => {
+  res.json({ bookmarks: Object.values(BOOKMARKS) });
+});
+
+// POST /bookmarks          { item }  → saves item
+app.post("/bookmarks", (req, res) => {
+  const { item } = req.body || {};
+  if (!item?.id) return res.status(400).json({ error: "item.id required" });
+  BOOKMARKS[item.id] = { ...item, bookmarkedAt: Date.now() };
+  saveBookmarks(BOOKMARKS);
+  res.json({ ok: true, id: item.id });
+});
+
+// DELETE /bookmarks/:id   → removes bookmark
+app.delete("/bookmarks/:id", (req, res) => {
+  const id = decodeURIComponent(req.params.id);
+  if (!BOOKMARKS[id]) return res.status(404).json({ error: "not found" });
+  delete BOOKMARKS[id];
+  saveBookmarks(BOOKMARKS);
+  res.json({ ok: true, id });
+});
+
+// ── Auto-refresh cache ─────────────────────────────────────────────
 setInterval(async () => {
   try {
     console.log("🔄 Auto-refreshing cache…");
