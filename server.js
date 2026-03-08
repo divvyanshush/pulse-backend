@@ -157,12 +157,12 @@ async function fetchGitHub() {
   }));
 }
 
-async function fetchRSS(url, src, srcLabel) {
+async function fetchRSS(url, src, srcLabel, aiOnly=false) {
   const feed = await parser.parseURL(url);
   return (feed.items||[])
-    .filter(e=>isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
+    .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
-      id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,16)}`,
+      id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
       src, srcLabel:srcLabel||src, type:guessType(e.title||""),
       title:(e.title||"").replace(/\n/g," ").trim(),
       sum:safeText(e.contentSnippet||e.summary||e.content||"").slice(0,240)+"…",
@@ -172,16 +172,16 @@ async function fetchRSS(url, src, srcLabel) {
 }
 
 const RSS_SOURCES = [
-  { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog" },
-  { url:"https://www.anthropic.com/news/rss.xml",         src:"Anthropic",   label:"Anthropic Blog" },
-  { url:"https://deepmind.google/blog/rss/feed.xml",      src:"DeepMind",    label:"DeepMind Blog" },
-  { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog" },
-  { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI" },
-  { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI" },
-  { url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", src:"TheVerge", label:"The Verge AI" },
-  { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI" },
-  { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review" },
-  { url:"https://feed.infoq.com/",                        src:"InfoQ",       label:"InfoQ" },
+  { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog",    aiOnly:true },
+  { url:"https://www.anthropic.com/news/rss.xml",         src:"Anthropic",   label:"Anthropic Blog", aiOnly:true },
+  { url:"https://deepmind.google/blog/rss/feed.xml",      src:"DeepMind",    label:"DeepMind Blog",  aiOnly:true },
+  { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog",aiOnly:true },
+  { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI", aiOnly:true },
+  { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI", aiOnly:true },
+  { url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", src:"TheVerge", label:"The Verge AI", aiOnly:true },
+  { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI",       aiOnly:true },
+  { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review", aiOnly:false },
+  { url:"https://feed.infoq.com/",                        src:"InfoQ",       label:"InfoQ",           aiOnly:false },
 ];
 
 // ── Main aggregator ────────────────────────────────────────────────
@@ -190,7 +190,7 @@ async function fetchAll() {
   const results = await Promise.allSettled([
     fetchHN(), fetchArxiv(), fetchDevTo(), fetchDevToML(),
     fetchLobsters(), fetchGitHub(),
-    ...RSS_SOURCES.map(s => fetchRSS(s.url, s.src, s.label)),
+    ...RSS_SOURCES.map(s => fetchRSS(s.url, s.src, s.label, s.aiOnly)),
   ]);
   const labels = ["HN","arXiv","Dev.to(AI)","Dev.to(ML)","Lobste.rs","GitHub",...RSS_SOURCES.map(s=>s.label)];
   const items = results
