@@ -239,8 +239,8 @@ app.post("/summarize", async (req, res) => {
   const { title, sum, src, type } = req.body || {};
   if (!title) return res.status(400).json({ error: "title required" });
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not set" });
 
   try {
     const prompt = `You are a concise AI news analyst. Given this article:
@@ -257,15 +257,14 @@ Write a 2-3 sentence sharp, insightful summary that:
 
 Reply with ONLY the summary, no preamble.`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "llama3-8b-8192",
         max_tokens: 200,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -274,11 +273,11 @@ Reply with ONLY the summary, no preamble.`;
 
     if (!response.ok) {
       const err = await response.text();
-      return res.status(502).json({ error: `Claude API error: ${err}` });
+      return res.status(502).json({ error: `Groq API error: ${err}` });
     }
 
     const data = await response.json();
-    const summary = data.content?.[0]?.text?.trim() || "Could not generate summary.";
+    const summary = data.choices?.[0]?.message?.content?.trim() || "Could not generate summary.";
     res.json({ summary });
   } catch(e) {
     console.error("Summarize error:", e.message);
