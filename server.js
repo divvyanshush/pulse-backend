@@ -92,7 +92,12 @@ app.get("/feed", async (req, res) => {
 });
 
 app.get("/health", (_, res) => res.json({ ok: true, items: CACHE.items.length, lastFetch: CACHE.lastFetch }));
-
+// Keep-alive ping every 4 minutes
+setInterval(() => {
+  fetch(`http://localhost:${PORT}/health`)
+    .then(() => console.log("✓ keep-alive ping"))
+    .catch(() => {});
+}, 4 * 60 * 1000);
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend running at http://localhost:${PORT}\n`);
   fetchAll().then(items => { CACHE.items = items; CACHE.lastFetch = Date.now(); console.log(`✅ Cache warm — ${items.length} items loaded\n`); });
