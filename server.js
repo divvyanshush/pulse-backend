@@ -148,20 +148,19 @@ async function fetchRSS(url, src, srcLabel) {
     }));
 }
 
-// ── All RSS sources ────────────────────────────────────────────────
 const RSS_SOURCES = [
   // Company blogs
-  { url:"https://openai.com/blog/rss",                    src:"OpenAI",      label:"OpenAI Blog" },
+  { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog" },
   { url:"https://www.anthropic.com/rss.xml",              src:"Anthropic",   label:"Anthropic Blog" },
-  { url:"https://deepmind.google/blog/rss/",              src:"DeepMind",    label:"DeepMind Blog" },
+  { url:"https://deepmind.google/discover/blog/rss/",     src:"DeepMind",    label:"DeepMind Blog" },
   { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog" },
   // News
   { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI" },
   { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI" },
-  { url:"https://www.theverge.com/ai-artificial-intelligence/rss/index.xml", src:"TheVerge", label:"The Verge AI" },
+  { url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", src:"TheVerge", label:"The Verge AI" },
   { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI" },
   { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review" },
-  { url:"https://www.infoq.com/ai-ml-data-eng/rss",      src:"InfoQ",       label:"InfoQ AI" },
+  { url:"https://feeds.feedburner.com/infoq/news",        src:"InfoQ",       label:"InfoQ" },
 ];
 
 // ── Main aggregator ────────────────────────────────────────────────
