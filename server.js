@@ -15,13 +15,27 @@ const CACHE_TTL = 60_000;
 
 // ── AI keyword filter ─────────────────────────────────────────────
 const AI_KW = [
-  "llm","gpt","claude","gemini","openai","anthropic","mistral","llama","ai ",
-  " ai,","artificial intelligence","machine learning","deep learning","neural",
-  "diffusion","transformer","fine-tun","rlhf","rag","embedding","inference",
-  "language model","multimodal","stable diffusion","deepmind","groq","hugging face",
-  "perplexity","chatgpt","copilot","midjourney","sora","nvidia","foundation model",
-  "generative","large model","text-to","image-to","vector database","autonomous",
-  "alignment","reinforcement learning","computer vision","nlp","natural language",
+  // Models & companies
+  "llm","gpt","claude","gemini","openai","anthropic","mistral","llama","grok",
+  "deepseek","qwen","phi-","falcon","bloom","palm","bard","copilot","chatgpt",
+  "deepmind","openai","hugging face","huggingface","nvidia","groq","perplexity",
+  "midjourney","sora","runway","stability","cohere","xai","inflection","adept",
+  // Tech terms
+  "artificial intelligence"," ai ","ai-","machine learning","deep learning",
+  "neural network","transformer","diffusion","embedding","inference","fine-tun",
+  "rlhf","rag","retrieval","vector","multimodal","foundation model","language model",
+  "generative ai","computer vision","nlp","natural language","reinforcement learning",
+  "alignment","hallucin","benchmark","dataset","parameter","token","attention",
+  "latent","autoregressive","quantiz","distillation","lora","prompt","agent",
+  // Products & tools
+  "cursor","replit","github copilot","tabnine","codewhisperer","devin","bolt",
+  "v0 ","lovable","vercel ai","langchain","llamaindex","autogpt","babyagi",
+  "stable diffusion","dall-e","dall·e","imagen","firefly","whisper","elevenlabs",
+  // Topics
+  "agi","superintelligence","ai safety","ai regulation","ai policy","ai ethics",
+  "ai startup","ai funding","ai research","ai model","ai tool","ai agent",
+  "ai generated","ai powered","ai based","ai driven","large model","small model",
+  "open source model","open weight","model release","model launch",
 ];
 const isAI = t => { const s=(t||"").toLowerCase(); return AI_KW.some(k=>s.includes(k)); };
 
@@ -50,7 +64,7 @@ const safeText = t => (t||"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
 // 1. Hacker News
 async function fetchHN() {
   const res = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json", {signal:AbortSignal.timeout(10000)});
-  const ids = (await res.json()).slice(0, 80);
+  const ids = (await res.json()).slice(0, 200);
   const rows = await Promise.allSettled(ids.map(id =>
     fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, {signal:AbortSignal.timeout(6000)}).then(r=>r.json())
   ));
@@ -66,7 +80,7 @@ async function fetchHN() {
 
 // 2. arXiv
 async function fetchArxiv() {
-  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=40", {signal:AbortSignal.timeout(12000)});
+  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=80", {signal:AbortSignal.timeout(12000)});
   const text = await res.text();
   const entries = text.split("<entry>").slice(1);
   return entries.map(e => {
