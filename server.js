@@ -159,7 +159,7 @@ async function fetchGitHub() {
 
 async function fetchRSS(url, src, srcLabel, aiOnly=false) {
   const feed = await parser.parseURL(url);
-  return (feed.items||[])
+  return (feed.items||[]).slice(0, 50)
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
       id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
@@ -173,8 +173,8 @@ async function fetchRSS(url, src, srcLabel, aiOnly=false) {
 
 const RSS_SOURCES = [
   { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog",    aiOnly:true },
-  { url:"https://www.anthropic.com/news/rss.xml",         src:"Anthropic",   label:"Anthropic Blog", aiOnly:true },
-  { url:"https://deepmind.google/blog/rss/feed.xml",      src:"DeepMind",    label:"DeepMind Blog",  aiOnly:true },
+  { url:"https://www.anthropic.com/rss.xml",              src:"Anthropic",   label:"Anthropic Blog", aiOnly:true },
+  { url:"https://deepmind.google/discover/blog/rss/feed.xml", src:"DeepMind", label:"DeepMind Blog", aiOnly:true },
   { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog",aiOnly:true },
   { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI", aiOnly:true },
   { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI", aiOnly:true },
