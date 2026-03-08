@@ -219,10 +219,17 @@ app.get("/feed", async (req, res) => {
 
 app.get("/health", (_, res) => res.json({ ok:true, items:CACHE.items.length, lastFetch:CACHE.lastFetch }));
 
-// Keep-alive ping every 4 minutes
-setInterval(() => {
-  fetch(`http://localhost:${PORT}/health`).catch(()=>{});
-}, 4 * 60 * 1000);
+// Keep-alive + auto refresh cache every 5 minutes
+setInterval(async () => {
+  try {
+    console.log("🔄 Auto-refreshing cache…");
+    CACHE.items = await fetchAll();
+    CACHE.lastFetch = Date.now();
+    console.log(`✅ Cache refreshed — ${CACHE.items.length} items`);
+  } catch(e) {
+    console.error("Auto-refresh failed:", e.message);
+  }
+}, 5 * 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
