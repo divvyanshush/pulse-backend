@@ -7,7 +7,7 @@ const app = express();
 const parser = new Parser();
 const PORT = 3001;
 
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const CACHE = { items: [], lastFetch: 0 };
