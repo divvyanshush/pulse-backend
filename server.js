@@ -44,25 +44,42 @@ async function fetchHN() {
 }
 
 async function fetchRedditSub(sub) {
-  const res = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=30&raw_json=1`, { headers: { "User-Agent": "pulse-app/1.0" } });
+  const res = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=30&raw_json=1`, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; pulse-app/1.0; +http://localhost)",
+      "Accept": "application/json",
+    }
+  });
+  if(!res.ok) throw new Error(`Reddit ${res.status}`);
   const json = await res.json();
-  return (json?.data?.children || []).map(c=>c.data).filter(p => p && isAI(p.title+(p.selftext||""))).map(p => ({
-    id:`reddit-${p.id}`, src:"Reddit", srcLabel:`r/${sub}`, type:guessType(p.title), title:p.title,
-    sum: p.selftext?.trim() ? p.selftext.slice(0,220)+"…" : `Hot on r/${sub}.`,
-    link:`https://reddit.com${p.permalink}`, time:p.created_utc, score:p.score||0, comments:p.num_comments||0,
-  }));
+  return (json?.data?.children || [])
+    .map(c => c.data)
+    .filter(p => p && isAI(p.title+(p.selftext||"")))
+    .map(p => ({
+      id:`reddit-${p.id}`, src:"Reddit", srcLabel:`r/${sub}`, type:guessType(p.title),
+      title:p.title,
+      sum: p.selftext?.trim() ? p.selftext.slice(0,220)+"…" : `Hot on r/${sub}.`,
+      link:`https://reddit.com${p.permalink}`,
+      time:p.created_utc, score:p.score||0, comments:p.num_comments||0,
+    }));
 }
 
 async function fetchArxiv() {
-  const feed = await parser.parseURL("https://export.arxiv.org/rss/cs.AI+cs.LG+cs.CL+cs.CV");
-  return (feed.items || []).map(e => ({
-    id:`arxiv-${(e.link||"").split("/abs/")[1]||Math.random()}`, src:"arXiv", type:"research",
-    title:(e.title||"").replace(/\n/g," ").trim(),
-    sum:(e.contentSnippet||e.summary||"").slice(0,240)+"…",
-    link:e.link||"https://arxiv.org",
-    time:e.pubDate ? Math.floor(new Date(e.pubDate).getTime()/1000) : Math.floor(Date.now()/1000),
-    score:0, comments:0, authors:e.creator||"",
-  }));
+  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL&sortBy=lastUpdatedDate&sortOrder=descending&max_results=30", {
+    headers: { "Accept": "application/xml" }
+  });
+  const text = await res.text();
+  const entries = text.split("<entry>").slice(1);
+  return entries.map(e => {
+    const get = tag => { const m = e.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`)); return m?m[1].trim():""; };
+    const title   = get("title").replace(/\n/g," ").trim();
+    const summary = get("summary").replace(/\n/g," ").slice(0,240)+"…";
+    const link    = (e.match(/<id>([\s\S]*?)<\/id>/)||[])[1]?.trim()||"https://arxiv.org";
+    const pub     = (e.match(/<published>([\s\S]*?)<\/published>/)||[])[1]?.trim();
+    const time    = pub ? Math.floor(new Date(pub).getTime()/1000) : Math.floor(Date.now()/1000);
+    const authors = (e.match(/<name>([\s\S]*?)<\/name>/g)||[]).slice(0,3).map(a=>a.replace(/<\/?name>/g,"")).join(", ");
+    return { id:`arxiv-${link.split("/abs/")[1]||Math.random()}`, src:"arXiv", type:"research", title, summary, sum:summary, link, time, score:0, comments:0, authors };
+  }).filter(e => e.title);
 }
 
 async function fetchAll() {
