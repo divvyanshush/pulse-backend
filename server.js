@@ -70,12 +70,28 @@ const guessType = (t, body="") => {
   return "product";
 };
 
-const heatScore = (score, comments, src) => {
-  const base = src==="HN" ? Math.min(score/4,65)
-             : src==="Dev.to" ? Math.min(score/2,65)
-             : src==="GitHub" ? Math.min(score/10,65)
-             : 40;
-  return Math.min(Math.round(base + Math.min((comments||0)/3, 35)), 99);
+const heatScore = (score, comments, src, time) => {
+  // Base engagement score per source
+  const engagement = src==="HN"     ? Math.min(score/3, 60) + Math.min((comments||0)/2, 30)
+                   : src==="Dev.to" ? Math.min(score/1.5, 55) + Math.min((comments||0)/2, 25)
+                   : src==="GitHub" ? Math.min(score/8, 50) + Math.min((comments||0)/3, 20)
+                   : src==="Lobste.rs" ? Math.min(score/2, 50) + Math.min((comments||0)/2, 25)
+                   : src==="arXiv"  ? 35  // research papers start medium
+                   : src==="OpenAI" || src==="Anthropic" || src==="DeepMind" ? 70 // company blogs are always hot
+                   : src==="HuggingFace" || src==="GoogleResearch" || src==="MetaAI" ? 60
+                   : src==="TechCrunch" || src==="TheVerge" || src==="VentureBeat" ? 50
+                   : 40;
+
+  // Time decay — items lose heat after 6 hours, heavily after 24h
+  const ageHours = time ? (Date.now()/1000 - time) / 3600 : 0;
+  const decay = ageHours < 2  ? 1.0
+              : ageHours < 6  ? 0.9
+              : ageHours < 12 ? 0.75
+              : ageHours < 24 ? 0.55
+              : ageHours < 48 ? 0.35
+              : 0.2;
+
+  return Math.min(Math.round(engagement * decay), 99);
 };
 
 const safeText = t => (t||"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
@@ -214,7 +230,7 @@ async function fetchAll() {
   const items = results
     .filter(r => r.status==="fulfilled")
     .flatMap(r => r.value)
-    .map(i => ({ ...i, heat: heatScore(i.score, i.comments, i.src) }));
+    .map(i => ({ ...i, heat: heatScore(i.score, i.comments, i.src, i.time) }));
   results.forEach((r,i) => {
     if(r.status==="rejected") console.warn(`⚠  ${labels[i]} failed:`, r.reason?.message);
     else console.log(`✓  ${labels[i]}: ${r.value.length} items`);
