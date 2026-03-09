@@ -159,7 +159,7 @@ async function fetchGitHub() {
 
 async function fetchRSS(url, src, srcLabel, aiOnly=false) {
   const feed = await parser.parseURL(url);
-  return (feed.items||[]).slice(0, 50)
+  return (feed.items||[]).slice(0, 100)
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
       id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
@@ -190,6 +190,11 @@ const RSS_SOURCES = [
   { url:"https://meta.ai/blog/rss/",                      src:"MetaAI",      label:"Meta AI",         aiOnly:true },
   { url:"https://towardsdatascience.com/feed",            src:"TDS",         label:"Towards Data Science", aiOnly:false },
   { url:"https://www.marktechpost.com/feed/",             src:"MarkTechPost", label:"MarkTechPost",   aiOnly:true },
+  { url:"https://bdtechtalks.com/feed/",                  src:"TechTalks",   label:"BD Tech Talks",   aiOnly:false },
+  { url:"https://thesequence.substack.com/feed",          src:"TheSequence", label:"The Sequence",    aiOnly:true },
+  { url:"https://www.aiweekly.co/feed",                   src:"AIWeekly",    label:"AI Weekly",       aiOnly:true },
+  { url:"https://lastweekin.ai/feed",                     src:"LastWeekInAI",label:"Last Week in AI", aiOnly:true },
+  { url:"https://importai.substack.com/feed",             src:"ImportAI",    label:"Import AI",       aiOnly:true },
 ];
 
 // ── Main aggregator ────────────────────────────────────────────────
