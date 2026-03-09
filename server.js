@@ -220,9 +220,16 @@ async function fetchAll() {
     else console.log(`✓  ${labels[i]}: ${r.value.length} items`);
   });
   const seen = new Set();
+  const titleSeen = new Set();
+  const normalize = t => t.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,60);
   const unique = items.filter(i => {
     if(!i.title || seen.has(i.id)) return false;
-    seen.add(i.id); return true;
+    const tk = normalize(i.title);
+    // Check for similar titles (first 60 normalized chars)
+    if(titleSeen.has(tk)) return false;
+    seen.add(i.id);
+    titleSeen.add(tk);
+    return true;
   });
   unique.sort((a,b) => b.time - a.time);
   console.log(`✅ Total: ${unique.length} items\n`);
