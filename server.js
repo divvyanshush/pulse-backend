@@ -182,6 +182,14 @@ const RSS_SOURCES = [
   { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI",       aiOnly:true },
   { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review", aiOnly:false },
   { url:"https://feed.infoq.com/",                        src:"InfoQ",       label:"InfoQ",           aiOnly:false },
+  { url:"https://simonwillison.net/atom/everything/",     src:"SimonW",      label:"Simon Willison",  aiOnly:true },
+  { url:"https://www.interconnects.ai/feed",              src:"Interconnects",label:"Interconnects",  aiOnly:true },
+  { url:"https://artificialintelligence-news.com/feed/",  src:"AINnews",     label:"AI News",         aiOnly:true },
+  { url:"https://blogs.microsoft.com/ai/feed/",           src:"Microsoft",   label:"Microsoft AI",    aiOnly:true },
+  { url:"https://research.google/blog/rss/",              src:"GoogleResearch",label:"Google Research",aiOnly:true },
+  { url:"https://meta.ai/blog/rss/",                      src:"MetaAI",      label:"Meta AI",         aiOnly:true },
+  { url:"https://towardsdatascience.com/feed",            src:"TDS",         label:"Towards Data Science", aiOnly:false },
+  { url:"https://www.marktechpost.com/feed/",             src:"MarkTechPost", label:"MarkTechPost",   aiOnly:true },
 ];
 
 // ── Main aggregator ────────────────────────────────────────────────
