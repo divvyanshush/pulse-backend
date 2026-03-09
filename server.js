@@ -55,13 +55,18 @@ const AI_KW = [
 ];
 const isAI = t => { const s=(t||"").toLowerCase(); return AI_KW.some(k=>s.includes(k)); };
 
-const guessType = t => {
-  const s=(t||"").toLowerCase();
-  if (/raise|fund|series [abcde]|valuation|billion|million|invest/.test(s)) return "funding";
-  if (/release|launch|open.?source|weights|v\d\.|checkpoint|introduces|announc|new model/.test(s)) return "model";
-  if (/paper|arxiv|research|study|benchmark|dataset|findings|survey|experiment/.test(s)) return "research";
-  if (/resign|leak|fire|contro|drama|allegat|scandal|lawsuit|dispute/.test(s)) return "drama";
-  if (/policy|regulation|eu |senate|law|ban|govern|compli|legal/.test(s)) return "policy";
+const guessType = (t, body="") => {
+  const s=((t||"")+" "+(body||"")).toLowerCase();
+  // Funding — money events
+  if (/raise|raised|raises|funding|fund round|series [abcde]|seed round|valuation|billion|million|invest|backed|vc |venture|acqui|merger|ipo|spac/.test(s)) return "funding";
+  // Drama — conflict, controversy
+  if (/resign|fired|lawsuit|sue|suing|leak|drama|contro|allegat|scandal|dispute|accus|fraud|investigation|ban|block|censor|protest|strike|layoff|lay off|laid off|cut jobs|job cut/.test(s)) return "drama";
+  // Policy — regulation, government
+  if (/policy|regulation|regulate|eu |european union|senate|congress|parliament|law|legislat|govern|compli|legal|court|ruling|executive order|white house|biden|trump|act |bill |gdpr|copyright|privacy law/.test(s)) return "policy";
+  // Research — academic, papers
+  if (/paper|arxiv|research|study|benchmark|dataset|findings|survey|experiment|we propose|we present|we introduce|novel approach|outperform|state.of.the.art|sota|ablation|evaluat|preprint/.test(s)) return "research";
+  // Model — releases, launches
+  if (/release|launch|released|launches|open.?source|open weight|weights|v\d[\.\d]|checkpoint|introduces|announc|new model|model card|available now|api access|now available|preview|beta|gpt-|claude |gemini |llama |mistral |deepseek |qwen |phi-|falcon |bloom |palm |grok /.test(s)) return "model";
   return "product";
 };
 
@@ -163,7 +168,7 @@ async function fetchRSS(url, src, srcLabel, aiOnly=false) {
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
       id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
-      src, srcLabel:srcLabel||src, type:guessType(e.title||""),
+      src, srcLabel:srcLabel||src, type:guessType(e.title||"", e.contentSnippet||e.summary||""),
       title:(e.title||"").replace(/\n/g," ").trim(),
       sum:safeText(e.contentSnippet||e.summary||e.content||"").slice(0,240)+"…",
       link:e.link||"", time:e.pubDate?Math.floor(new Date(e.pubDate).getTime()/1000):Math.floor(Date.now()/1000),
