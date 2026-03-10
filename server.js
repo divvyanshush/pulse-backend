@@ -315,6 +315,46 @@ async function fetchAll() {
   return unique;
 }
 
+// ── Background "why this matters" generator ────────────────────
+const WHY_CACHE = new Map(); // id -> why string
+
+async function generateWhys(items) {
+  // Only process top 30 by heat that don't have a why yet
+  const top30 = [...items]
+    .sort((a,b)=>(b.heat||0)-(a.heat||0))
+    .slice(0,30)
+    .filter(i => !WHY_CACHE.has(i.id));
+
+  if(!top30.length) return;
+
+  try {
+    const prompt = `You are briefing a senior AI developer. For each item, write ONE sentence (max 10 words) explaining the practical impact for developers. Be specific, no hype, no filler words.
+Return ONLY a JSON object mapping id to sentence. Example: {"id1":"sentence","id2":"sentence"}
+
+Items:
+${top30.map(i=>`{"id":"${i.id}","title":${JSON.stringify(i.title)},"sum":${JSON.stringify((i.sum||"").slice(0,120))}}`).join("\n")}`;
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+process.env.GROQ_API_KEY},
+      body:JSON.stringify({
+        model:"llama-3.1-8b-instant",
+        messages:[{role:"user",content:prompt}],
+        max_tokens:600,
+        temperature:0.2
+      })
+    });
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content?.trim()||"{}";
+    const clean = raw.replace(/```json|```/g,"").trim();
+    const whys = JSON.parse(clean);
+    Object.entries(whys).forEach(([id,why])=>WHY_CACHE.set(id,why));
+    console.log(`✅ Generated ${Object.keys(whys).length} why-this-matters`);
+  } catch(e) {
+    console.warn("Why generation failed:", e.message);
+  }
+}
+
 // ── Routes ─────────────────────────────────────────────────────────
 
 // Feed
@@ -401,7 +441,9 @@ app.get("/feed", async (req, res) => {
     if (now - CACHE.lastFetch < CACHE_TTL && CACHE.items.length > 0) {
       return res.json({ items: CACHE.items, cached: true, age: Math.round((now-CACHE.lastFetch)/1000) });
     }
-    CACHE.items     = await fetchAll();
+    const fetched = await fetchAll();
+    CACHE.items = fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""}));
+    generateWhys(fetched).then(()=>{ CACHE.items=fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""})); }).catch(()=>{});
     CACHE.lastFetch = Date.now();
     res.json({ items: CACHE.items, cached: false, age: 0 });
   } catch(err) {
@@ -672,5 +714,5 @@ app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
-  fetchAll().then(items => { CACHE.items=items; CACHE.lastFetch=Date.now(); });
+  fetchAll().then(items => { CACHE.items=items.map(i=>({...i,why:WHY_CACHE.get(i.id)||""})); CACHE.lastFetch=Date.now(); generateWhys(items).then(()=>{ CACHE.items=items.map(i=>({...i,why:WHY_CACHE.get(i.id)||""})); }).catch(()=>{}); });
 });
