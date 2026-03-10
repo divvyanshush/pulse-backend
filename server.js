@@ -70,6 +70,29 @@ const guessType = (t, body="") => {
   return "product";
 };
 
+
+const guessTags = (t, body="") => {
+  const s = ((t||"")+" "+(body||"")).toLowerCase();
+  const tags = [];
+  // Frameworks & tools
+  if (/rag|retrieval.augmented|retrieval augmented/.test(s)) tags.push("RAG");
+  if (/agent[s]?|agentic|multi.agent|autonomous agent/.test(s)) tags.push("Agents");
+  if (/llm[s]?|large language model/.test(s)) tags.push("LLM");
+  if (/fine.tun|finetuning|finetune|lora|qlora|peft/.test(s)) tags.push("Fine-tuning");
+  if (/diffusion|stable diffusion|image gen|text.to.image|dall.e|midjourney|flux/.test(s)) tags.push("Diffusion");
+  if (/multimodal|multi.modal|vision.language|vlm|image.text|text.image/.test(s)) tags.push("Multimodal");
+  if (/transformer[s]?|attention mechanism|self.attention/.test(s)) tags.push("Transformer");
+  if (/rlhf|reinforcement learning from|reward model|ppo|grpo/.test(s)) tags.push("RLHF");
+  if (/vector.db|vector database|embedding[s]?|semantic search|pinecone|weaviate|chroma/.test(s)) tags.push("Embeddings");
+  if (/langchain|llamaindex|llama.index|haystack/.test(s)) tags.push("LangChain");
+  if (/open.?source|open weight|open model/.test(s)) tags.push("Open Source");
+  if (/benchmark[s]?|leaderboard|eval[s]?|mmlu|hellaswag|gsm8k/.test(s)) tags.push("Benchmark");
+  if (/reasoning|chain.of.thought|cot|o1|r1|thinking model/.test(s)) tags.push("Reasoning");
+  if (/code.gen|coding model|code model|copilot|devin|swe.bench/.test(s)) tags.push("Code");
+  if (/safety|alignment|jailbreak|red.team|guardrail|bias|harmless/.test(s)) tags.push("Safety");
+  return tags.slice(0, 3); // max 3 tags per item
+};
+
 const heatScore = (score, comments, src, time) => {
   // Base engagement score per source
   const engagement = src==="HN"     ? Math.min(score/3, 60) + Math.min((comments||0)/2, 30)
@@ -107,7 +130,7 @@ async function fetchHN() {
   return rows
     .filter(r => r.status==="fulfilled" && r.value?.title && isAI(r.value.title+(r.value.text||"")))
     .map(({value:s}) => ({
-      id:`hn-${s.id}`, src:"HN", type:guessType(s.title), title:s.title,
+      id:`hn-${s.id}`, src:"HN", type:guessType(s.title), tags:guessTags(s.title), title:s.title,
       sum: s.text ? safeText(s.text).slice(0,220)+"…" : "Discussion on Hacker News.",
       link: s.url||`https://news.ycombinator.com/item?id=${s.id}`,
       time:s.time, score:s.score||0, comments:s.descendants||0,
@@ -126,7 +149,7 @@ async function fetchArxiv() {
     const pub     = (e.match(/<published>([\s\S]*?)<\/published>/)||[])[1]?.trim();
     const time    = pub ? Math.floor(new Date(pub).getTime()/1000) : Math.floor(Date.now()/1000);
     const authors = (e.match(/<name>([\s\S]*?)<\/name>/g)||[]).slice(0,3).map(a=>a.replace(/<\/?name>/g,"")).join(", ");
-    return { id:`arxiv-${link.split("/abs/")[1]||Math.random()}`, src:"arXiv", type:"research", title, sum:summary, link, time, score:0, comments:0, authors };
+    return { id:`arxiv-${link.split("/abs/")[1]||Math.random()}`, src:"arXiv", type:"research", tags:guessTags(title, summary), title, sum:summary, link, time, score:0, comments:0, authors };
   }).filter(e=>e.title);
 }
 
@@ -134,7 +157,7 @@ async function fetchDevTo() {
   const res = await fetch("https://dev.to/api/articles?tag=ai&per_page=30&top=1", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
   return (json||[]).filter(a=>isAI(a.title+(a.description||""))).map(a=>({
-    id:`devto-${a.id}`, src:"Dev.to", type:guessType(a.title), title:a.title,
+    id:`devto-${a.id}`, src:"Dev.to", type:guessType(a.title), tags:guessTags(a.title), title:a.title,
     sum: safeText(a.description||"").slice(0,220)+"…",
     link:a.url, time:Math.floor(new Date(a.published_at).getTime()/1000),
     score:a.positive_reactions_count||0, comments:a.comments_count||0,
@@ -145,7 +168,7 @@ async function fetchDevToML() {
   const res = await fetch("https://dev.to/api/articles?tag=machinelearning&per_page=20&top=1", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
   return (json||[]).filter(a=>isAI(a.title+(a.description||""))).map(a=>({
-    id:`devto-ml-${a.id}`, src:"Dev.to", type:guessType(a.title), title:a.title,
+    id:`devto-ml-${a.id}`, src:"Dev.to", type:guessType(a.title), tags:guessTags(a.title), title:a.title,
     sum: safeText(a.description||"").slice(0,220)+"…",
     link:a.url, time:Math.floor(new Date(a.published_at).getTime()/1000),
     score:a.positive_reactions_count||0, comments:a.comments_count||0,
@@ -156,7 +179,7 @@ async function fetchLobsters() {
   const res = await fetch("https://lobste.rs/t/ai.json", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
   return (json||[]).map(s=>({
-    id:`lobsters-${s.short_id}`, src:"Lobste.rs", type:guessType(s.title), title:s.title,
+    id:`lobsters-${s.short_id}`, src:"Lobste.rs", type:guessType(s.title), tags:guessTags(s.title), title:s.title,
     sum:`${s.description||"Technical discussion on Lobste.rs."}`.slice(0,220),
     link:s.url||`https://lobste.rs/s/${s.short_id}`,
     time:Math.floor(new Date(s.created_at).getTime()/1000),
@@ -184,7 +207,7 @@ async function fetchRSS(url, src, srcLabel, aiOnly=false) {
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
       id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
-      src, srcLabel:srcLabel||src, type:guessType(e.title||"", e.contentSnippet||e.summary||""),
+      src, srcLabel:srcLabel||src, type:guessType(e.title||"", e.contentSnippet||e.summary||""), tags:guessTags(e.title||"", e.contentSnippet||e.summary||""),
       title:(e.title||"").replace(/\n/g," ").trim(),
       sum:safeText(e.contentSnippet||e.summary||e.content||"").slice(0,240)+"…",
       link:e.link||"", time:e.pubDate?Math.floor(new Date(e.pubDate).getTime()/1000):Math.floor(Date.now()/1000),
