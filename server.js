@@ -508,7 +508,7 @@ app.post("/send-digest", async (req, res) => {
     `;
 
     await resend.emails.send({
-      from: "Pulse <digest@updates.pulse-ai.dev>",
+      from: "Pulse <onboarding@resend.dev>",
       to: email,
       subject: `Pulse Daily · ${top.length} AI signals for you`,
       html,
