@@ -453,7 +453,7 @@ app.get("/trending-repos", async (req, res) => {
 
 
 // ── EMAIL DIGEST ───────────────────────────────────────────────
-const { Resend } = require("resend");
+import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.post("/send-digest", async (req, res) => {
