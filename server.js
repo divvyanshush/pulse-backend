@@ -93,25 +93,65 @@ const guessTags = (t, body="") => {
   return tags.slice(0, 3); // max 3 tags per item
 };
 
-const heatScore = (score, comments, src, time) => {
+// Source credibility weights — how much we trust each source
+const SRC_WEIGHT = {
+  // Tier 1 — primary developer signals
+  HN: 1.0, "Lobste.rs": 0.95, arXiv: 0.95,
+  GitHub: 0.9,
+  // Tier 2 — official company blogs
+  OpenAI: 0.92, Anthropic: 0.92, GoogleResearch: 0.90,
+  MetaAI: 0.88, HuggingFace: 0.88, Microsoft: 0.82,
+  // Tier 3 — good tech media
+  "Dev.to": 0.80, MITReview: 0.82, Interconnects: 0.82,
+  SimonW: 0.80, ImportAI: 0.80, TheSequence: 0.78,
+  // Tier 4 — general tech media
+  TechCrunch: 0.70, TheVerge: 0.68, VentureBeat: 0.68,
+  Wired: 0.65,
+};
+
+// Developer relevance keywords — boost items that matter to builders
+const DEV_KEYWORDS = [
+  "open.source","released","launches","api","benchmark","outperforms",
+  "fine.tun","training","inference","deploy","model","dataset","paper",
+  "research","agent","rag","embedding","llm","gpt","claude","gemini",
+  "mistral","llama","open.weights","arxiv","github","repo"
+];
+
+const heatScore = (score, comments, src, time, title="", sum="") => {
+  const text = (title + " " + sum).toLowerCase();
+
   // Base engagement score per source
-  const engagement = src==="HN"     ? Math.min(score/3, 60) + Math.min((comments||0)/2, 30)
-                   : src==="Dev.to" ? Math.min(score/1.5, 55) + Math.min((comments||0)/2, 25)
-                   : src==="GitHub" ? Math.min(score/8, 50) + Math.min((comments||0)/3, 20)
-                   : src==="Lobste.rs" ? Math.min(score/2, 50) + Math.min((comments||0)/2, 25)
-                   : src==="arXiv"  ? 35  // research papers start medium
-                   : src==="OpenAI" || src==="Anthropic" || src==="DeepMind" ? 70 // company blogs are always hot
-                   : src==="HuggingFace" || src==="GoogleResearch" || src==="MetaAI" ? 60
-                   : src==="TechCrunch" || src==="TheVerge" || src==="VentureBeat" ? 50
-                   : 40;
+  const rawEngagement =
+      src==="HN"        ? Math.min(score/3, 60)  + Math.min((comments||0)/2, 30)
+    : src==="Dev.to"    ? Math.min(score/1.5, 55) + Math.min((comments||0)/2, 25)
+    : src==="GitHub"    ? Math.min(score/6, 55)   + Math.min((comments||0)/3, 20)
+    : src==="Lobste.rs" ? Math.min(score/2, 50)   + Math.min((comments||0)/2, 25)
+    : src==="arXiv"     ? 38
+    : src==="OpenAI" || src==="Anthropic" ? 72
+    : src==="GoogleResearch" || src==="MetaAI" || src==="HuggingFace" ? 62
+    : src==="MITReview" || src==="Interconnects" || src==="SimonW" ? 52
+    : src==="TechCrunch" || src==="TheVerge" || src==="VentureBeat" ? 48
+    : 40;
+
+  // Source credibility multiplier
+  const credibility = SRC_WEIGHT[src] || 0.65;
+
+  // Developer relevance boost — up to +15 points
+  const devMatches = DEV_KEYWORDS.filter(kw => text.includes(kw.replace(".","")||kw)).length;
+  const devBoost = Math.min(devMatches * 3, 15);
+
+  // GitHub star velocity boost
+  const starBoost = src==="GitHub" && score > 2000 ? Math.min((score-2000)/200, 15) : 0;
+
+  const engagement = (rawEngagement * credibility) + devBoost + starBoost;
 
   // Time decay — items lose heat after 6 hours, heavily after 24h
   const ageHours = time ? (Date.now()/1000 - time) / 3600 : 0;
   const decay = ageHours < 2  ? 1.0
-              : ageHours < 6  ? 0.9
-              : ageHours < 12 ? 0.75
-              : ageHours < 24 ? 0.55
-              : ageHours < 48 ? 0.35
+              : ageHours < 6  ? 0.92
+              : ageHours < 12 ? 0.78
+              : ageHours < 24 ? 0.58
+              : ageHours < 48 ? 0.38
               : 0.2;
 
   return Math.min(Math.round(engagement * decay), 99);
@@ -253,7 +293,7 @@ async function fetchAll() {
   const items = results
     .filter(r => r.status==="fulfilled")
     .flatMap(r => r.value)
-    .map(i => ({ ...i, heat: heatScore(i.score, i.comments, i.src, i.time) }));
+    .map(i => ({ ...i, heat: heatScore(i.score, i.comments, i.src, i.time, i.title||"", i.sum||"") }));
   results.forEach((r,i) => {
     if(r.status==="rejected") console.warn(`⚠  ${labels[i]} failed:`, r.reason?.message);
     else console.log(`✓  ${labels[i]}: ${r.value.length} items`);
