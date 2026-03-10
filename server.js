@@ -444,7 +444,8 @@ app.get("/feed", async (req, res) => {
     }
     const fetched = await fetchAll();
     CACHE.items = fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""}));
-    generateWhys(fetched).then(()=>{ CACHE.items=fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""})); }).catch(()=>{});
+    await generateWhys(fetched);
+    CACHE.items = fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""}));
     CACHE.lastFetch = Date.now();
     res.json({ items: CACHE.items, cached: false, age: 0 });
   } catch(err) {
@@ -715,5 +716,11 @@ app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
-  fetchAll().then(items => { CACHE.items=items.map(i=>({...i,why:WHY_CACHE.get(i.id)||""})); CACHE.lastFetch=Date.now(); generateWhys(items).then(()=>{ CACHE.items=items.map(i=>({...i,why:WHY_CACHE.get(i.id)||""})); }).catch(()=>{}); });
+  fetchAll().then(async items => {
+    CACHE.items=items.map(i=>({...i,why:""}));
+    CACHE.lastFetch=Date.now();
+    await generateWhys(items);
+    CACHE.items=items.map(i=>({...i,why:WHY_CACHE.get(i.id)||""}));
+    console.log("✅ Why cache applied to feed");
+  });
 });
