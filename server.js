@@ -194,7 +194,7 @@ async function fetchGitHub() {
   });
   const json = await res.json();
   return (json?.items||[]).map(r=>({
-    id:`github-${r.id}`, src:"GitHub", type:"model", title:`⭐ ${r.full_name} — ${r.description||""}`.slice(0,120),
+    id:`github-${r.id}`, src:"GitHub", type:"model", title:`${r.full_name} — ${r.description||""}`.slice(0,100),
     sum:(r.description||"No description.").slice(0,220),
     link:r.html_url, time:Math.floor(new Date(r.updated_at).getTime()/1000),
     score:r.stargazers_count||0, comments:r.forks_count||0,
