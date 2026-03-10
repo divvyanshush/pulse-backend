@@ -340,8 +340,8 @@ async function generateWhys(items) {
   if(!top30.length) return;
 
   try {
-    const prompt = `You are briefing a senior AI developer. For each item, write ONE sentence (max 10 words) explaining WHY A DEVELOPER SHOULD CARE — the practical consequence, not a restatement of the title. Focus on: what changes, what becomes possible, what problem it solves. Never repeat words from the title or summary.
-Return ONLY a JSON object mapping id to sentence. Example: {"id1":"sentence","id2":"sentence"}
+    const prompt = `You are a senior engineer writing a daily briefing for AI developers. For each item below, write ONE short sentence (max 10 words) that answers: "So what? Why does this matter to someone building AI products?" Focus on practical impact — cost, speed, capability, or workflow change. Never restate the title. Skip items that are not genuinely useful to developers (tutorials, listicles, spam) by returning an empty string for those.
+Return ONLY a valid JSON object mapping id to sentence. Example: {"id1":"Cuts inference cost by 40% on consumer hardware.","id2":""}
 
 Items:
 ${top30.map(i=>`{"id":"${i.id}","title":${JSON.stringify(i.title)},"sum":${JSON.stringify((i.sum||"").slice(0,120))}}`).join("\n")}`;
