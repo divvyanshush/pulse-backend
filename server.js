@@ -300,6 +300,8 @@ app.get("/health", (_, res) => res.json({ ok:true, items:CACHE.items.length, las
 // POST /summarize  { title, sum, src, type }
 // Returns { summary: "…" }
 app.post("/summarize", async (req, res) => {
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || "unknown";
+  if(rateLimit(`summarize:${ip}`, 20, 60_000)) return res.status(429).json({ error: "Too many requests. Please slow down." });
   const { title, sum, src, type } = req.body || {};
   if (!title) return res.status(400).json({ error: "title required" });
 
@@ -453,6 +455,21 @@ app.get("/trending-repos", async (req, res) => {
 
 
 // ── EMAIL DIGEST ───────────────────────────────────────────────
+
+// ── RATE LIMITER ────────────────────────────────────────────────
+const rateLimitMap = new Map();
+const rateLimit = (key, maxReqs, windowMs) => {
+  const now = Date.now();
+  const record = rateLimitMap.get(key) || { count: 0, start: now };
+  if(now - record.start > windowMs) {
+    rateLimitMap.set(key, { count: 1, start: now });
+    return false; // not limited
+  }
+  record.count++;
+  rateLimitMap.set(key, record);
+  return record.count > maxReqs; // true = limited
+};
+
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -520,6 +537,21 @@ app.post("/send-digest", async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+
+// ── KEEP ALIVE (prevent Railway sleep) ─────────────────────────
+const SELF_URL = process.env.RAILWAY_PUBLIC_DOMAIN 
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
+  : null;
+
+if(SELF_URL) {
+  setInterval(async () => {
+    try { await fetch(`${SELF_URL}/health`); } 
+    catch(e) {}
+  }, 4 * 60 * 1000); // ping every 4 minutes
+}
+
+app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
