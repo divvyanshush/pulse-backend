@@ -317,6 +317,7 @@ async function fetchAll() {
 
 // ── Background "why this matters" generator ────────────────────
 const WHY_CACHE = new Map(); // id -> why string
+// Clear on each deploy to regenerate with new prompt
 
 async function generateWhys(items) {
   // Only process top 30 by heat that don't have a why yet
@@ -328,7 +329,7 @@ async function generateWhys(items) {
   if(!top30.length) return;
 
   try {
-    const prompt = `You are briefing a senior AI developer. For each item, write ONE sentence (max 10 words) explaining the practical impact for developers. Be specific, no hype, no filler words.
+    const prompt = `You are briefing a senior AI developer. For each item, write ONE sentence (max 10 words) explaining WHY A DEVELOPER SHOULD CARE — the practical consequence, not a restatement of the title. Focus on: what changes, what becomes possible, what problem it solves. Never repeat words from the title or summary.
 Return ONLY a JSON object mapping id to sentence. Example: {"id1":"sentence","id2":"sentence"}
 
 Items:
