@@ -385,6 +385,72 @@ setInterval(async () => {
   }
 }, 5 * 60 * 1000);
 
+
+// ── TRENDING REPOS ─────────────────────────────────────────────
+let trendingCache = { data: [], ts: 0 };
+
+async function fetchTrendingRepos() {
+  try {
+    // Search for AI repos updated in last 24h, sorted by stars
+    const since = new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0];
+    const queries = [
+      "topic:llm+pushed:>" + since,
+      "topic:ai-agents+pushed:>" + since,
+      "topic:machine-learning+pushed:>" + since,
+    ];
+
+    const results = await Promise.allSettled(queries.map(q =>
+      fetch(`https://api.github.com/search/repositories?q=${q}&sort=stars&order=desc&per_page=10`, {
+        headers:{"Accept":"application/vnd.github.v3+json","User-Agent":"pulse-app/1.0"},
+        signal:AbortSignal.timeout(10000)
+      }).then(r=>r.json())
+    ));
+
+    const seen = new Set();
+    const repos = [];
+
+    for(const r of results) {
+      if(r.status !== "fulfilled") continue;
+      for(const repo of (r.value?.items||[])) {
+        if(seen.has(repo.id)) continue;
+        seen.add(repo.id);
+        repos.push({
+          id: repo.id,
+          name: repo.full_name,
+          description: (repo.description||"").slice(0,100),
+          stars: repo.stargazers_count||0,
+          forks: repo.forks_count||0,
+          url: repo.html_url,
+          language: repo.language||"",
+          topics: (repo.topics||[]).slice(0,3),
+          updatedAt: repo.updated_at,
+        });
+      }
+    }
+
+    // Sort by stars, take top 10
+    repos.sort((a,b) => b.stars - a.stars);
+    return repos.slice(0, 10);
+  } catch(e) {
+    console.warn("fetchTrendingRepos failed:", e.message);
+    return [];
+  }
+}
+
+app.get("/trending-repos", async (req, res) => {
+  try {
+    const now = Date.now();
+    if(now - trendingCache.ts < 10*60*1000 && trendingCache.data.length > 0) {
+      return res.json({ repos: trendingCache.data });
+    }
+    const repos = await fetchTrendingRepos();
+    trendingCache = { data: repos, ts: now };
+    res.json({ repos });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
   fetchAll().then(items => { CACHE.items=items; CACHE.lastFetch=Date.now(); });
