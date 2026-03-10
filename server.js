@@ -451,6 +451,76 @@ app.get("/trending-repos", async (req, res) => {
   }
 });
 
+
+// ── EMAIL DIGEST ───────────────────────────────────────────────
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+app.post("/send-digest", async (req, res) => {
+  try {
+    const { email, items } = req.body;
+    if(!email || !items?.length) return res.status(400).json({ error: "Missing email or items" });
+
+    const top = items.slice(0, 8);
+
+    const typeColors = {
+      model:"#00ff88", research:"#4da6ff", funding:"#ffd700",
+      product:"#c77dff", policy:"#ff9f43", drama:"#ff4d6d"
+    };
+
+    const rows = top.map(item => {
+      const color = typeColors[item.type] || "#c77dff";
+      const tags = (item.tags||[]).map(t =>
+        `<span style="font-size:10px;padding:2px 6px;border-radius:2px;background:#1a1a2e;color:#8888aa;border:1px solid #111128;margin-right:4px;">${t}</span>`
+      ).join("");
+      return `
+        <div style="padding:16px 0;border-bottom:1px solid #111128;">
+          <div style="margin-bottom:8px;">
+            <span style="font-size:10px;padding:2px 7px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;font-weight:600;letter-spacing:0.08em;">${item.type?.toUpperCase()}</span>
+          </div>
+          <a href="${item.link}" style="color:#d8d8f0;text-decoration:none;font-size:14px;font-weight:500;line-height:1.5;display:block;margin-bottom:8px;">${item.title}</a>
+          <p style="color:#8888aa;font-size:12px;line-height:1.6;margin:0 0 8px;">${(item.sum||"").slice(0,200)}${item.sum?.length>200?"…":""}</p>
+          ${tags ? `<div style="margin-bottom:4px;">${tags}</div>` : ""}
+          <span style="font-size:11px;color:#555570;">${item.srcLabel||item.src} · ${item.timeLabel||""}</span>
+        </div>
+      `;
+    }).join("");
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"/></head>
+      <body style="margin:0;padding:0;background:#050507;font-family:'Courier New',monospace;">
+        <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
+          <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #111128;">
+            <div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;margin-bottom:6px;">PULSE</div>
+            <div style="font-size:11px;color:#555570;letter-spacing:0.12em;">AI SIGNALS FOR DEVELOPERS · DAILY DIGEST</div>
+          </div>
+          <div style="margin-bottom:8px;font-size:11px;color:#555570;letter-spacing:0.1em;">TOP STORIES TODAY</div>
+          ${rows}
+          <div style="margin-top:32px;padding-top:24px;border-top:1px solid #111128;text-align:center;">
+            <a href="https://pulse-ui-gilt.vercel.app" style="display:inline-block;padding:10px 24px;background:#00ff88;color:#000;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;border-radius:4px;">OPEN PULSE</a>
+            <p style="margin-top:16px;font-size:10px;color:#333350;">You're receiving this because you enabled daily digest in Pulse.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: "Pulse <digest@updates.pulse-ai.dev>",
+      to: email,
+      subject: `Pulse Daily · ${top.length} AI signals for you`,
+      html,
+    });
+
+    res.json({ ok: true });
+  } catch(e) {
+    console.error("send-digest error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
   fetchAll().then(items => { CACHE.items=items; CACHE.lastFetch=Date.now(); });
