@@ -278,6 +278,84 @@ async function fetchAll() {
 // ── Routes ─────────────────────────────────────────────────────────
 
 // Feed
+
+// ── Daily Briefing ──────────────────────────────────────────────
+let BRIEFING_CACHE = { data: null, ts: 0 };
+
+app.get("/briefing", async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+
+  // Cache for 30 minutes
+  if(BRIEFING_CACHE.data && Date.now() - BRIEFING_CACHE.ts < 30*60*1000) {
+    return res.json(BRIEFING_CACHE.data);
+  }
+
+  try {
+    const items = CACHE.items || [];
+    const now = Math.floor(Date.now()/1000);
+    const last24h = items.filter(i => now - (i.time||0) < 86400);
+    const top5 = [...last24h]
+      .sort((a,b)=>(b.heat||0)-(a.heat||0))
+      .slice(0,5);
+
+    if(!top5.length) return res.json({ items: [] });
+
+    // Generate "why this matters" for each via Groq
+    const prompt = `You are a senior AI researcher briefing a developer team.
+For each item below, write ONE sentence (max 12 words) explaining why it matters to developers.
+Be specific, direct, no hype. No bullet points, just the sentence.
+Return ONLY a JSON array of 5 strings in the same order.
+
+Items:
+${top5.map((i,idx)=>`${idx+1}. [${i.type?.toUpperCase()}] ${i.title} — ${(i.sum||"").slice(0,100)}`).join("
+")}
+
+Return format: ["sentence1","sentence2","sentence3","sentence4","sentence5"]`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 300,
+        temperature: 0.3
+      })
+    });
+
+    const groqData = await groqRes.json();
+    const raw = groqData.choices?.[0]?.message?.content?.trim() || "[]";
+    let whys = [];
+    try {
+      const clean = raw.replace(/```json|```/g,"").trim();
+      whys = JSON.parse(clean);
+    } catch(e) { whys = top5.map(()=>""); }
+
+    const briefing = {
+      date: new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}).toUpperCase(),
+      items: top5.map((item,i) => ({
+        idx: i+1,
+        type: item.type,
+        title: item.title,
+        why: whys[i] || "",
+        src: item.src,
+        heat: item.heat,
+        link: item.link,
+        id: item.id
+      }))
+    };
+
+    BRIEFING_CACHE = { data: briefing, ts: Date.now() };
+    res.json(briefing);
+  } catch(e) {
+    console.error("Briefing error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get("/feed", async (req, res) => {
   try {
     const now = Date.now();
