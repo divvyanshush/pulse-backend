@@ -307,8 +307,7 @@ Be specific, direct, no hype. No bullet points, just the sentence.
 Return ONLY a JSON array of 5 strings in the same order.
 
 Items:
-${top5.map((i,idx)=>`${idx+1}. [${i.type?.toUpperCase()}] ${i.title} — ${(i.sum||"").slice(0,100)}`).join("
-")}
+${top5.map((i,idx)=>String(idx+1)+". ["+((i.type||"").toUpperCase())+"] "+i.title+" - "+((i.sum||"").slice(0,100))).join("\n")}
 
 Return format: ["sentence1","sentence2","sentence3","sentence4","sentence5"]`;
 
