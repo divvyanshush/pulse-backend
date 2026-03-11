@@ -359,9 +359,19 @@ ${top30.map(i=>`{"id":"${i.id}","title":${JSON.stringify(i.title)},"sum":${JSON.
     const data = await res.json();
     const raw = data.choices?.[0]?.message?.content?.trim()||"{}";
     const clean = raw.replace(/```json|```/g,"").trim();
-    const whys = JSON.parse(clean);
-    Object.entries(whys).forEach(([id,why])=>WHY_CACHE.set(id,why));
-    console.log(`✅ Generated ${Object.keys(whys).length} why-this-matters`);
+    let whys = {};
+    try {
+      const match = clean.match(/\{[\s\S]*\}/);
+      if(match) whys = JSON.parse(match[0]);
+    } catch(e2) {
+      const lines = clean.split("\n");
+      for(const line of lines) {
+        const m = line.match(/"([^"]+)"\s*:\s*"([^"]*)"/);
+        if(m) whys[m[1]] = m[2];
+      }
+    }
+    Object.entries(whys).forEach(([id,why])=>{ if(why) WHY_CACHE.set(id,why); });
+    console.log("Generated "+Object.keys(whys).length+" why-this-matters");
   } catch(e) {
     console.warn("Why generation failed:", e.message);
   }
