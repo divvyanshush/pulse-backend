@@ -465,9 +465,7 @@ app.get("/feed", async (req, res) => {
       return res.json({ items: CACHE.items, cached: true, age: Math.round((now-CACHE.lastFetch)/1000) });
     }
     const fetched = await fetchAll();
-    CACHE.items = fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""}));
-    await generateWhys(fetched);
-    CACHE.items = fetched.map(i=>({...i,why:WHY_CACHE.get(i.id)||""}));
+    CACHE.items = fetched;
     CACHE.lastFetch = Date.now();
     res.json({ items: CACHE.items, cached: false, age: 0 });
   } catch(err) {
@@ -734,7 +732,7 @@ if(SELF_URL) {
   }, 4 * 60 * 1000); // ping every 4 minutes
 }
 
-app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
+// duplicate health endpoint removed
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Pulse backend — http://localhost:${PORT}\n`);
