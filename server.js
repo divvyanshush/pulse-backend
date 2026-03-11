@@ -334,6 +334,7 @@ async function generateWhys(items) {
   // Only process top 30 by heat that don't have a why yet
   const top30 = [...items]
     .sort((a,b)=>(b.heat||0)-(a.heat||0))
+    .filter(i => i.src !== "GitHub")
     .slice(0,30)
     .filter(i => !WHY_CACHE.has(i.id));
 
