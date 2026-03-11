@@ -389,30 +389,39 @@ app.get("/briefing", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   // Cache for 30 minutes
-  if(BRIEFING_CACHE.data && Date.now() - BRIEFING_CACHE.ts < 30*60*1000) {
+  if(BRIEFING_CACHE.data && Date.now() - BRIEFING_CACHE.ts < 15*60*1000) {
     return res.json(BRIEFING_CACHE.data);
   }
 
   try {
     const items = CACHE.items || [];
     const now = Math.floor(Date.now()/1000);
-    const last24h = items.filter(i => now - (i.time||0) < 86400);
-    const top5 = [...last24h]
-      .sort((a,b)=>(b.heat||0)-(a.heat||0))
-      .slice(0,5);
 
-    if(!top5.length) return res.json({ items: [] });
+    // Briefing only shows real news/papers/blogs — not repos or HN discussions
+    const NEWS_SOURCES = [
+      "OpenAI","Anthropic","DeepMind","GoogleResearch","MetaAI","HuggingFace",
+      "Microsoft","TechCrunch","TheVerge","VentureBeat","MITReview","Wired",
+      "Interconnects","SimonW","ImportAI","TheSequence","LastWeekInAI",
+      "TDS","MarkTechPost","TechTalks","AINnews","arXiv","Dev.to"
+    ];
+    const last48h = items.filter(i => now - (i.time||0) < 172800);
+    const newsOnly = last48h.filter(i => NEWS_SOURCES.includes(i.src));
+    const top10 = [...newsOnly]
+      .sort((a,b)=>(b.heat||0)-(a.heat||0))
+      .slice(0,10);
+
+    if(!top10.length) return res.json({ items: [] });
 
     // Generate "why this matters" for each via Groq
     const prompt = `You are a senior AI researcher briefing a developer team.
 For each item below, write ONE sentence (max 12 words) explaining why it matters to developers.
 Be specific, direct, no hype. No bullet points, just the sentence.
-Return ONLY a JSON array of 5 strings in the same order.
+Return ONLY a JSON array of strings in the same order (one per item).
 
 Items:
-${top5.map((i,idx)=>String(idx+1)+". ["+((i.type||"").toUpperCase())+"] "+i.title+" - "+((i.sum||"").slice(0,100))).join("\n")}
+${top10.map((i,idx)=>String(idx+1)+". ["+((i.type||"").toUpperCase())+"] "+i.title+" - "+((i.sum||"").slice(0,100))).join("\n")}
 
-Return format: ["sentence1","sentence2","sentence3","sentence4","sentence5"]`;
+Return format: ["sentence1","sentence2",...]`;
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -438,7 +447,7 @@ Return format: ["sentence1","sentence2","sentence3","sentence4","sentence5"]`;
 
     const briefing = {
       date: new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}).toUpperCase(),
-      items: top5.map((item,i) => ({
+      items: top10.map((item,i) => ({
         idx: i+1,
         type: item.type,
         title: item.title,
