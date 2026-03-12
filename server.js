@@ -128,7 +128,7 @@ const heatScore = (score, comments, src, time, title="", sum="") => {
   const rawEngagement =
       src==="HN"        ? Math.min(score/3, 60)  + Math.min((comments||0)/2, 30)
     : src==="Dev.to"    ? Math.min(score/1.5, 55) + Math.min((comments||0)/2, 25)
-    : src==="GitHub"    ? Math.min(score/6, 55)   + Math.min((comments||0)/3, 20)
+    : src==="GitHub"    ? Math.min(score/4, 70)   + Math.min((comments||0)/2, 25)
     : src==="Lobste.rs" ? Math.min(score/2, 50)   + Math.min((comments||0)/2, 25)
     : src==="arXiv"     ? 38
     : src==="OpenAI" || src==="Anthropic" ? 72
@@ -145,7 +145,7 @@ const heatScore = (score, comments, src, time, title="", sum="") => {
   const devBoost = Math.min(devMatches * 3, 15);
 
   // GitHub star velocity boost
-  const starBoost = src==="GitHub" && score > 2000 ? Math.min((score-2000)/200, 15) : 0;
+  const starBoost = src==="GitHub" && score > 1000 ? Math.min((score-1000)/150, 25) : 0;
 
   const engagement = (rawEngagement * credibility) + devBoost + starBoost;
 
@@ -232,7 +232,7 @@ async function fetchLobsters() {
 }
 
 async function fetchGitHub() {
-  const res = await fetch("https://api.github.com/search/repositories?q=topic:llm+topic:artificial-intelligence&sort=stars&order=desc&per_page=20", {
+  const res = await fetch("https://api.github.com/search/repositories?q=topic:llm+OR+topic:artificial-intelligence+OR+topic:machine-learning&sort=updated&order=desc&per_page=30", {
     headers:{"Accept":"application/vnd.github.v3+json","User-Agent":"pulse-app/1.0"},
     signal:AbortSignal.timeout(10000)
   });
@@ -240,7 +240,7 @@ async function fetchGitHub() {
   return (json?.items||[]).map(r=>({
     id:`github-${r.id}`, src:"GitHub", type:"repo", title:`${r.full_name} — ${r.description||""}`.slice(0,100),
     sum:(r.description||"No description.").slice(0,220),
-    link:r.html_url, time:Math.floor(new Date(r.updated_at).getTime()/1000),
+    link:r.html_url, time:Math.floor(new Date(r.pushed_at||r.updated_at).getTime()/1000),
     score:r.stargazers_count||0, comments:r.forks_count||0,
   }));
 }
