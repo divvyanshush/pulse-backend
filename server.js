@@ -340,7 +340,8 @@ async function fetchAll() {
 }
 
 // ── Background "why this matters" generator ────────────────────
-const WHY_CACHE = new Map(); // id -> why string
+const WHY_CACHE = new Map();
+let DIGEST_CACHE = { data: null, ts: 0 };
 // Clear on each deploy to regenerate with new prompt
 
 async function generateWhys(items) {
