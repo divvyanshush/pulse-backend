@@ -67,8 +67,8 @@ const guessType = (t, body="", src="") => {
   // Funding — very specific signals only
   if (/series [abcde] |seed round|funding round|\$\d+[mb] raise|acqui[a-z]+ |merger|ipo/.test(s)) return "funding";
 
-  // Model — specific model names in title
-  if (/\b(gpt-[\d]|claude [\d]|gemini [\d]|llama [\d]|mistral [\d]|deepseek-|qwen[\d]|phi-[\d]|grok-[\d])/.test(title)) return "model";
+  // Model — specific model names anywhere in title
+  if (/\bgpt-[\d.]|claude [\d]|claude opus|claude sonnet|claude haiku|gemini [\d.]|llama [\d]|llama-[\d]|mistral [\d]|deepseek-|deepseek [\d]|qwen[\d]|phi-[\d]|grok-[\d]|gpt-4|gpt-5|o1 |o3 |o1-|o3-/.test(title)) return "model";
   if (/\b(releases?|launches?|ships?|announces?|introduces?)\b.{0,30}\b(model|api|weights?)\b/.test(title)) return "model";
   if (/open.?source[sd]?|open weight|model card|now available|available now/.test(title)) return "model";
 
