@@ -55,18 +55,33 @@ const AI_KW = [
 ];
 const isAI = t => { const s=(t||"").toLowerCase(); return AI_KW.some(k=>s.includes(k)); };
 
-const guessType = (t, body="") => {
+const guessType = (t, body="", src="") => {
   const s=((t||"")+" "+(body||"")).toLowerCase();
-  // Research first — most specific signal
-  if (/paper|arxiv|research|study|benchmark|dataset|findings|survey|experiment|we propose|we present|we introduce|novel approach|outperform|state.of.the.art|sota|ablation|evaluat|preprint/.test(s)) return "research";
-  // Model — releases, launches
-  if (/release|launch|released|launches|open.?source|open weight|weights|v\d[\.\d]|checkpoint|introduces|announc|new model|model card|available now|api access|now available|preview|beta|gpt-|claude |gemini |llama |mistral |deepseek |qwen |phi-|falcon |bloom |palm |grok /.test(s)) return "model";
-  // Funding — money events
-  if (/raise|raised|raises|funding|fund round|series [abcde]|seed round|valuation|billion|million|invest|backed|vc |venture|acqui|merger|ipo|spac/.test(s)) return "funding";
-  // Policy — regulation, government
-  if (/policy|regulation|regulate|eu |european union|senate|congress|parliament|law|legislat|govern|compli|legal|court|ruling|executive order|white house|biden|trump|act |bill |gdpr|copyright|privacy law/.test(s)) return "policy";
-  // Drama — only if clearly about conflict (last resort)
-  if (/resign|fired|lawsuit|sue |suing|drama|scandal|dispute|accus|fraud|investigation|layoff|lay off|laid off|cut jobs/.test(s)) return "drama";
+
+  // GitHub repos always repo
+  if(src==="GitHub") return "repo";
+
+  // HN/Lobsters always discuss
+  if(src==="HN" || src==="Lobste.rs") return "discuss";
+
+  // Funding — money events (check early, very specific signals)
+  if (/raise[sd]?|funding round|series [abcde]|seed round|valuation|\$\d+[mb]|acqui|merger|ipo/.test(s)) return "funding";
+
+  // Model releases — specific model names or release language
+  if (/\b(gpt-|claude |gemini |llama |mistral |deepseek |qwen |phi-|falcon |grok |o1|o3|sonnet|opus|haiku)/.test(s)) return "model";
+  if (/new model|model release|model card|open.?source model|open weight|released today|now available|api access|launching/.test(s)) return "model";
+
+  // Research — only if clearly academic (arxiv, paper, benchmark with academic signals)
+  if (/arxiv|preprint|we propose|we present|ablation|sota|state.of.the.art|\d+[bm] param/.test(s)) return "research";
+  if (/\bpaper\b|\bbenchmark\b|\bdataset\b/.test(s) && /evaluat|experiment|findings|outperform/.test(s)) return "research";
+
+  // Policy — government/legal
+  if (/regulation|regulate|eu ai act|senate|congress|executive order|gdpr|copyright law|lawsuit|sued|suing/.test(s)) return "policy";
+
+  // Drama — conflict
+  if (/fired|resign|scandal|layoff|laid off|controversy/.test(s)) return "drama";
+
+  // Everything else is product/tool/blog
   return "product";
 };
 
