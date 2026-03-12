@@ -333,7 +333,7 @@ function clusterItems(items) {
     "this","that","are","is","was","we","our","can","get","will","has",
     "have","about","into","more","based","via","vs","model","models","llm",
     "large","language","learning","deep","machine","neural","data","paper",
-    "build","building","make","making","system","systems"
+    "build","building","make","making","system","systems","open","source","free","local","tool","tools","show","built","agent","agents","code","based"
   ]);
 
   const getKeywords = (title) => {
