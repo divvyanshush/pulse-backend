@@ -529,19 +529,22 @@ app.post("/summarize", async (req, res) => {
   if (!GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not set" });
 
   try {
-    const prompt = `You are a concise AI news analyst. Given this article:
+    const prompt = `You are a staff engineer who reads everything in AI. Be direct and technical.
 
+Article:
 Title: ${title}
 Source: ${src || "unknown"}
-Category: ${type || "unknown"}
-Existing snippet: ${sum || "N/A"}
+Type: ${type || "unknown"}
+Summary: ${sum || "N/A"}
 
-Write a 2-3 sentence sharp, insightful summary that:
-- Explains WHY this matters to AI practitioners/researchers
-- Highlights the key technical detail or implication
-- Is written in plain English, no hype
+Write 2-3 sentences for an AI builder audience:
+- Sentence 1: What exactly happened or what was found (be specific with numbers/names if relevant)
+- Sentence 2: What this means practically — what can you do now, what changes, what to watch
+- Sentence 3 (optional): Any gotcha, limitation, or context worth knowing
 
-Reply with ONLY the summary, no preamble.`;
+Rules: no hype words, no "groundbreaking/revolutionary/exciting", be concrete, write like you're slacking a colleague.
+
+Reply with ONLY the summary, no preamble, no bullet points.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -550,8 +553,9 @@ Reply with ONLY the summary, no preamble.`;
         "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        max_tokens: 200,
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 250,
+        temperature: 0.3,
         messages: [{ role: "user", content: prompt }],
       }),
       signal: AbortSignal.timeout(20000),
