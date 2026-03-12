@@ -683,7 +683,7 @@ app.get("/trending-repos", async (req, res) => {
 // ── GET /digest — category summaries ─────────────────────────────
 app.get("/digest", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
-  if(DIGEST_CACHE.data && Date.now() - DIGEST_CACHE.ts < 20*60*1000) {
+  if(DIGEST_CACHE.data && Date.now() - DIGEST_CACHE.ts < 10*60*1000) {
     return res.json(DIGEST_CACHE.data);
   }
   try {
@@ -718,7 +718,7 @@ app.get("/digest", async (req, res) => {
 
     const categoryPromises = CATS.map(async (cat) => {
       const catItems = (grouped[cat.id] || []).slice(0,15);
-      if(!catItems.length) return null;
+      if(catItems.length < 2) return null;
       const topItems = catItems.slice(0,8);
       const prompt = `You are a staff engineer giving a 30-second briefing on today's ${cat.label}.
 
