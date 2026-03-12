@@ -355,8 +355,16 @@ function clusterItems(items) {
     if(kw.size === 0) { clustered.push(item); used.add(item.id); continue; }
 
     const related = [];
+    // Don't cluster GitHub repos with each other
+    if(item.src === "GitHub") {
+      clustered.push({ ...item, relatedCount: 0 });
+      used.add(item.id);
+      continue;
+    }
     for(const other of sorted) {
       if(used.has(other.id) || other.id === item.id) continue;
+      // Don't pull GitHub repos into news clusters
+      if(other.src === "GitHub") continue;
       const okw = getKeywords(other.title || "");
       const overlap = okw.filter(w => kw.has(w)).length;
       // Need 2+ keyword overlap AND same rough time window (48h)
