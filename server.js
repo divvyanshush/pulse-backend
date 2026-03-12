@@ -415,7 +415,7 @@ app.get("/briefing", async (req, res) => {
       "OpenAI","Anthropic","DeepMind","GoogleResearch","MetaAI","HuggingFace",
       "Microsoft","TechCrunch","TheVerge","VentureBeat","MITReview","Wired",
       "Interconnects","SimonW","ImportAI","TheSequence","LastWeekInAI",
-      "TDS","MarkTechPost","TechTalks","AINnews","arXiv","Dev.to"
+      "TDS","MarkTechPost","TechTalks","AINnews","arXiv","Dev.to","Mistral","Raschka","LilianWeng","Karpathy","FastAI","DeepLearningAI","LangChain","Cohere","WandB","TogetherAI"
     ];
     const last48h = items.filter(i => now - (i.time||0) < 172800);
     const newsOnly = last48h.filter(i => NEWS_SOURCES.includes(i.src));
@@ -426,15 +426,22 @@ app.get("/briefing", async (req, res) => {
     if(!top10.length) return res.json({ items: [] });
 
     // Generate "why this matters" for each via Groq
-    const prompt = `You are a senior AI researcher briefing a developer team.
-For each item below, write ONE sentence (max 12 words) explaining why it matters to developers.
-Be specific, direct, no hype. No bullet points, just the sentence.
-Return ONLY a JSON array of strings in the same order (one per item).
+    const prompt = `You are a principal engineer at a top AI lab. You read everything and cut through hype.
+Below are today's top AI signals. For each, write ONE punchy sentence (15-25 words) that tells an AI builder exactly why they should care.
+
+Rules:
+- Be concrete and specific — mention the actual impact, number, or capability
+- Speak to builders: "this means you can now...", "replaces X", "affects how you..."
+- No fluff like "groundbreaking" or "revolutionary"
+- If it's a paper, mention the key finding
+- If it's a model release, mention what changed vs before
+- If it's a tool, mention what problem it solves
 
 Items:
-${top10.map((i,idx)=>String(idx+1)+". ["+((i.type||"").toUpperCase())+"] "+i.title+" - "+((i.sum||"").slice(0,100))).join("\n")}
+${top10.map((i,idx)=>String(idx+1)+". ["+((i.type||"").toUpperCase())+"] "+i.title+"\n   "+((i.sum||"").slice(0,150))).join("\n\n")}
 
-Return format: ["sentence1","sentence2",...]`;
+Return ONLY a JSON array of 10 strings. No markdown, no explanation.
+Format: ["sentence1","sentence2",...]`;
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -443,10 +450,10 @@ Return format: ["sentence1","sentence2",...]`;
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 300,
-        temperature: 0.3
+        max_tokens: 600,
+        temperature: 0.4
       })
     });
 
@@ -456,7 +463,7 @@ Return format: ["sentence1","sentence2",...]`;
     try {
       const clean = raw.replace(/```json|```/g,"").trim();
       whys = JSON.parse(clean);
-    } catch(e) { whys = top5.map(()=>""); }
+    } catch(e) { whys = top10.map(()=>""); }
 
     const briefing = {
       date: new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}).toUpperCase(),
