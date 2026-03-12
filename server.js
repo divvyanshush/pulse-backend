@@ -420,9 +420,18 @@ app.get("/briefing", async (req, res) => {
     const last48h = items.filter(i => now - (i.time||0) < 172800);
     const AI_RELEVANT = /ai|llm|gpt|claude|gemini|llama|mistral|model|neural|machine learning|deep learning|transformer|agent|inference|training|dataset|benchmark|openai|anthropic|deepmind|hugging/i;
     const newsOnly = last48h.filter(i => NEWS_SOURCES.includes(i.src) && AI_RELEVANT.test(i.title));
-    const top10 = [...newsOnly]
-      .sort((a,b)=>(b.heat||0)-(a.heat||0))
-      .slice(0,10);
+    // Enforce diversity — max 3 arXiv, max 4 of any single source
+    const sorted = [...newsOnly].sort((a,b)=>(b.heat||0)-(a.heat||0));
+    const srcCount = {};
+    const top10 = [];
+    for(const item of sorted) {
+      if(top10.length >= 10) break;
+      const src = item.src;
+      srcCount[src] = (srcCount[src]||0) + 1;
+      const maxForSrc = src==="arXiv" ? 3 : 4;
+      if(srcCount[src] > maxForSrc) continue;
+      top10.push(item);
+    }
 
     if(!top10.length) return res.json({ items: [] });
 
