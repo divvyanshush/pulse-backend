@@ -57,16 +57,16 @@ const isAI = t => { const s=(t||"").toLowerCase(); return AI_KW.some(k=>s.includ
 
 const guessType = (t, body="") => {
   const s=((t||"")+" "+(body||"")).toLowerCase();
-  // Funding — money events
-  if (/raise|raised|raises|funding|fund round|series [abcde]|seed round|valuation|billion|million|invest|backed|vc |venture|acqui|merger|ipo|spac/.test(s)) return "funding";
-  // Drama — conflict, controversy
-  if (/resign|fired|lawsuit|sue|suing|leak|drama|contro|allegat|scandal|dispute|accus|fraud|investigation|ban|block|censor|protest|strike|layoff|lay off|laid off|cut jobs|job cut/.test(s)) return "drama";
-  // Policy — regulation, government
-  if (/policy|regulation|regulate|eu |european union|senate|congress|parliament|law|legislat|govern|compli|legal|court|ruling|executive order|white house|biden|trump|act |bill |gdpr|copyright|privacy law/.test(s)) return "policy";
-  // Research — academic, papers
+  // Research first — most specific signal
   if (/paper|arxiv|research|study|benchmark|dataset|findings|survey|experiment|we propose|we present|we introduce|novel approach|outperform|state.of.the.art|sota|ablation|evaluat|preprint/.test(s)) return "research";
   // Model — releases, launches
   if (/release|launch|released|launches|open.?source|open weight|weights|v\d[\.\d]|checkpoint|introduces|announc|new model|model card|available now|api access|now available|preview|beta|gpt-|claude |gemini |llama |mistral |deepseek |qwen |phi-|falcon |bloom |palm |grok /.test(s)) return "model";
+  // Funding — money events
+  if (/raise|raised|raises|funding|fund round|series [abcde]|seed round|valuation|billion|million|invest|backed|vc |venture|acqui|merger|ipo|spac/.test(s)) return "funding";
+  // Policy — regulation, government
+  if (/policy|regulation|regulate|eu |european union|senate|congress|parliament|law|legislat|govern|compli|legal|court|ruling|executive order|white house|biden|trump|act |bill |gdpr|copyright|privacy law/.test(s)) return "policy";
+  // Drama — only if clearly about conflict (last resort)
+  if (/resign|fired|lawsuit|sue |suing|drama|scandal|dispute|accus|fraud|investigation|layoff|lay off|laid off|cut jobs/.test(s)) return "drama";
   return "product";
 };
 
@@ -418,7 +418,8 @@ app.get("/briefing", async (req, res) => {
       "TDS","MarkTechPost","TechTalks","AINnews","arXiv","Dev.to","Mistral","Raschka","LilianWeng","Karpathy","FastAI","DeepLearningAI","LangChain","Cohere","WandB","TogetherAI"
     ];
     const last48h = items.filter(i => now - (i.time||0) < 172800);
-    const newsOnly = last48h.filter(i => NEWS_SOURCES.includes(i.src));
+    const AI_RELEVANT = /ai|llm|gpt|claude|gemini|llama|mistral|model|neural|machine learning|deep learning|transformer|agent|inference|training|dataset|benchmark|openai|anthropic|deepmind|hugging/i;
+    const newsOnly = last48h.filter(i => NEWS_SOURCES.includes(i.src) && AI_RELEVANT.test(i.title));
     const top10 = [...newsOnly]
       .sort((a,b)=>(b.heat||0)-(a.heat||0))
       .slice(0,10);
