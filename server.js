@@ -722,8 +722,7 @@ app.get("/digest", async (req, res) => {
       const topItems = catItems.slice(0,8);
       const prompt = `You are a senior AI engineer summarizing today's ${cat.label} for fellow builders.
 Items:
-${topItems.map((i,idx) => `${idx+1}. ${i.title}${i.sum ? " — " + i.sum.slice(0,100) : ""}`).join("
-")}
+${topItems.map((i,idx) => `${idx+1}. ${i.title}${i.sum ? " — " + i.sum.slice(0,100) : ""}`).join("\n")}
 Write 2-3 sentences: summarize the overall trend, call out 1-2 specific items by name, tell builders what to pay attention to.
 Be direct, no hype. Reply with ONLY the summary.`;
       try {
