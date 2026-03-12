@@ -56,32 +56,32 @@ const AI_KW = [
 const isAI = t => { const s=(t||"").toLowerCase(); return AI_KW.some(k=>s.includes(k)); };
 
 const guessType = (t, body="", src="") => {
-  const s=((t||"")+" "+(body||"")).toLowerCase();
+  const s = ((t||"")+" "+(body||"")).toLowerCase();
+  const title = (t||"").toLowerCase();
 
-  // GitHub repos always repo
+  // Source-based — most reliable signal
   if(src==="GitHub") return "repo";
-
-  // HN/Lobsters always discuss
   if(src==="HN" || src==="Lobste.rs") return "discuss";
+  if(src==="arXiv") return "research";
 
-  // Funding — money events (check early, very specific signals)
-  if (/raise[sd]?|funding round|series [abcde]|seed round|valuation|\$\d+[mb]|acqui|merger|ipo/.test(s)) return "funding";
+  // Funding — very specific signals only
+  if (/series [abcde] |seed round|funding round|\$\d+[mb] raise|acqui[a-z]+ |merger|ipo/.test(s)) return "funding";
 
-  // Model releases — specific model names or release language
-  if (/\b(gpt-|claude |gemini |llama |mistral |deepseek |qwen |phi-|falcon |grok |o1|o3|sonnet|opus|haiku)/.test(s)) return "model";
-  if (/new model|model release|model card|open.?source model|open weight|released today|now available|api access|launching/.test(s)) return "model";
+  // Model — specific model names in title
+  if (/\b(gpt-[\d]|claude [\d]|gemini [\d]|llama [\d]|mistral [\d]|deepseek-|qwen[\d]|phi-[\d]|grok-[\d])/.test(title)) return "model";
+  if (/\b(releases?|launches?|ships?|announces?|introduces?)\b.{0,30}\b(model|api|weights?)\b/.test(title)) return "model";
+  if (/open.?source[sd]?|open weight|model card|now available|available now/.test(title)) return "model";
 
-  // Research — only if clearly academic (arxiv, paper, benchmark with academic signals)
-  if (/arxiv|preprint|we propose|we present|ablation|sota|state.of.the.art|\d+[bm] param/.test(s)) return "research";
-  if (/\bpaper\b|\bbenchmark\b|\bdataset\b/.test(s) && /evaluat|experiment|findings|outperform/.test(s)) return "research";
+  // Research — academic signals in title only (not body — too noisy)
+  if (/\bpaper\b|\bsurvey\b|\bpreprint\b|\bbenchmark\b/.test(title)) return "research";
+  if (/: a .{3,30} (approach|method|framework|system|model)$/i.test(t||"")) return "research";
 
-  // Policy — government/legal
-  if (/regulation|regulate|eu ai act|senate|congress|executive order|gdpr|copyright law|lawsuit|sued|suing/.test(s)) return "policy";
+  // Policy
+  if (/regulation|eu ai act|senate|congress|executive order|copyright law|lawsuit|sued/.test(title)) return "policy";
 
-  // Drama — conflict
-  if (/fired|resign|scandal|layoff|laid off|controversy/.test(s)) return "drama";
+  // Drama
+  if (/fired|resign|scandal|layoff|laid off/.test(title)) return "drama";
 
-  // Everything else is product/tool/blog
   return "product";
 };
 
