@@ -196,6 +196,21 @@ async function fetchHN() {
     }));
 }
 
+const ARXIV_RELEVANCE = (title, summary="") => {
+  const s = (title + " " + summary).toLowerCase();
+  let score = 0;
+  const HIGH = [/\bllm\b/,/\blarge language model/,/\bagents?\b/,/\breasoning\b/,
+    /fine.tun/,/\brlhf\b/,/\brag\b|retrieval.augmented/,/\binference\b/,
+    /context.length|context window/,/\bmultimodal\b/,/\bembedding/,
+    /\bvlm\b|vision.language/,/chain.of.thought/,/\bcode gen|code model/];
+  const MED = [/\btransformer\b/,/\battention\b/,/\bdiffusion\b/,/\bbenchmark\b/,/\bevaluat/];
+  const LABS = [/google|deepmind|openai|anthropic|meta |microsoft|mistral|hugging/];
+  HIGH.forEach(r => { if(r.test(s)) score += 3; });
+  MED.forEach(r => { if(r.test(s)) score += 1; });
+  LABS.forEach(r => { if(r.test(s)) score += 2; });
+  return score;
+};
+
 async function fetchArxiv() {
   const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=80", {signal:AbortSignal.timeout(12000)});
   const text = await res.text();
