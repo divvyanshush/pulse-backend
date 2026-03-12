@@ -324,6 +324,60 @@ const RSS_SOURCES = [
   { url:"https://cohere.com/blog/rss", src:"Cohere", label:"Cohere Blog", aiOnly:true },
 ];
 
+
+// ── Topic clustering — deduplicate same-story coverage ────────────
+function clusterItems(items) {
+  const STOP = new Set([
+    "the","a","an","in","of","to","for","and","or","with","on","at","by",
+    "how","what","why","when","new","ai","using","use","your","from","its",
+    "this","that","are","is","was","we","our","can","get","will","has",
+    "have","about","into","more","based","via","vs","model","models","llm",
+    "large","language","learning","deep","machine","neural","data","paper",
+    "build","building","make","making","system","systems"
+  ]);
+
+  const getKeywords = (title) => {
+    return title.toLowerCase()
+      .replace(/[^a-z0-9 ]/g," ")
+      .split(/\s+/)
+      .filter(w => w.length > 3 && !STOP.has(w));
+  };
+
+  const clustered = [];
+  const used = new Set();
+
+  // Sort by heat descending — lead item is always highest heat
+  const sorted = [...items].sort((a,b) => (b.heat||0) - (a.heat||0));
+
+  for(const item of sorted) {
+    if(used.has(item.id)) continue;
+    const kw = new Set(getKeywords(item.title || ""));
+    if(kw.size === 0) { clustered.push(item); used.add(item.id); continue; }
+
+    const related = [];
+    for(const other of sorted) {
+      if(used.has(other.id) || other.id === item.id) continue;
+      const okw = getKeywords(other.title || "");
+      const overlap = okw.filter(w => kw.has(w)).length;
+      // Need 2+ keyword overlap AND same rough time window (48h)
+      const timeDiff = Math.abs((item.time||0) - (other.time||0));
+      if(overlap >= 2 && timeDiff < 172800) {
+        related.push({ id:other.id, title:other.title, src:other.src, link:other.link, heat:other.heat });
+        used.add(other.id);
+      }
+    }
+
+    clustered.push({
+      ...item,
+      related: related.length > 0 ? related : undefined,
+      relatedCount: related.length
+    });
+    used.add(item.id);
+  }
+
+  return clustered;
+}
+
 // ── Main aggregator ────────────────────────────────────────────────
 async function fetchAll() {
   console.log("🔄 Fetching all sources…");
