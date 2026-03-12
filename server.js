@@ -174,7 +174,7 @@ async function fetchHN() {
   return rows
     .filter(r => r.status==="fulfilled" && r.value?.title && isAI(r.value.title+(r.value.text||"")))
     .map(({value:s}) => ({
-      id:`hn-${s.id}`, src:"HN", type:guessType(s.title), tags:guessTags(s.title), title:s.title,
+      id:`hn-${s.id}`, src:"HN", type:"discuss", tags:guessTags(s.title), title:s.title,
       sum: s.text ? safeText(s.text).slice(0,220)+"…" : "Discussion on Hacker News.",
       link: s.url||`https://news.ycombinator.com/item?id=${s.id}`,
       time:s.time, score:s.score||0, comments:s.descendants||0,
@@ -223,7 +223,7 @@ async function fetchLobsters() {
   const res = await fetch("https://lobste.rs/t/ai.json", {signal:AbortSignal.timeout(10000)});
   const json = await res.json();
   return (json||[]).map(s=>({
-    id:`lobsters-${s.short_id}`, src:"Lobste.rs", type:guessType(s.title), tags:guessTags(s.title), title:s.title,
+    id:`lobsters-${s.short_id}`, src:"Lobste.rs", type:"discuss", tags:guessTags(s.title), title:s.title,
     sum:`${s.description||"Technical discussion on Lobste.rs."}`.slice(0,220),
     link:s.url||`https://lobste.rs/s/${s.short_id}`,
     time:Math.floor(new Date(s.created_at).getTime()/1000),
