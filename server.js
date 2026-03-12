@@ -720,11 +720,19 @@ app.get("/digest", async (req, res) => {
       const catItems = (grouped[cat.id] || []).slice(0,15);
       if(!catItems.length) return null;
       const topItems = catItems.slice(0,8);
-      const prompt = `You are a senior AI engineer summarizing today's ${cat.label} for fellow builders.
+      const prompt = `You are a staff engineer giving a 30-second briefing on today's ${cat.label}.
+
 Items:
 ${topItems.map((i,idx) => `${idx+1}. ${i.title}${i.sum ? " — " + i.sum.slice(0,100) : ""}`).join("\n")}
-Write 2-3 sentences: summarize the overall trend, call out 1-2 specific items by name, tell builders what to pay attention to.
-Be direct, no hype. Reply with ONLY the summary.`;
+
+Rules:
+- Name specific projects, models, or papers — no vague references
+- Say what actually happened, not "there is a trend of..."
+- Tell builders one concrete thing to do or watch
+- Max 2 sentences
+- No hype words: revolutionary, groundbreaking, exciting, significant
+
+Reply with ONLY the 2-sentence summary.`;
       try {
         const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method:"POST",
