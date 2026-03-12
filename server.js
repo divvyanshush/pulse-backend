@@ -679,6 +679,84 @@ app.get("/trending-repos", async (req, res) => {
 });
 
 
+
+// ── GET /digest — category summaries ─────────────────────────────
+app.get("/digest", async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  if(DIGEST_CACHE.data && Date.now() - DIGEST_CACHE.ts < 20*60*1000) {
+    return res.json(DIGEST_CACHE.data);
+  }
+  try {
+    const items = CACHE.items || [];
+    const now = Math.floor(Date.now()/1000);
+    const recent = items.filter(i => now - (i.time||0) < 86400);
+
+    const normalize = type => {
+      if(type==="product") return "tool";
+      if(type==="repo") return "repo";
+      if(type==="discuss") return "discuss";
+      return type || "tool";
+    };
+
+    const CATS = [
+      { id:"model",    label:"Models & Releases" },
+      { id:"research", label:"Research & Papers"  },
+      { id:"tool",     label:"Tools & Libraries"  },
+      { id:"discuss",  label:"Community"           },
+      { id:"funding",  label:"Funding & Business"  },
+    ];
+
+    const grouped = {};
+    for(const item of recent) {
+      const key = normalize(item.type);
+      if(!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+    for(const key of Object.keys(grouped)) {
+      grouped[key].sort((a,b)=>(b.heat||0)-(a.heat||0));
+    }
+
+    const categoryPromises = CATS.map(async (cat) => {
+      const catItems = (grouped[cat.id] || []).slice(0,15);
+      if(!catItems.length) return null;
+      const topItems = catItems.slice(0,8);
+      const prompt = `You are a senior AI engineer summarizing today's ${cat.label} for fellow builders.
+Items:
+${topItems.map((i,idx) => `${idx+1}. ${i.title}${i.sum ? " — " + i.sum.slice(0,100) : ""}`).join("
+")}
+Write 2-3 sentences: summarize the overall trend, call out 1-2 specific items by name, tell builders what to pay attention to.
+Be direct, no hype. Reply with ONLY the summary.`;
+      try {
+        const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method:"POST",
+          headers:{"Content-Type":"application/json","Authorization":`Bearer ${process.env.GROQ_API_KEY}`},
+          body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"user",content:prompt}],max_tokens:150,temperature:0.3}),
+          signal:AbortSignal.timeout(15000)
+        });
+        const d = await r.json();
+        const summary = d.choices?.[0]?.message?.content?.trim() || "";
+        return { id:cat.id, label:cat.label, summary, count:catItems.length,
+          items:catItems.map(i=>({id:i.id,title:i.title,src:i.src,srcLabel:i.srcLabel,type:i.type,
+            heat:i.heat,time:i.time,timeLabel:i.timeLabel,link:i.link,sum:i.sum,
+            score:i.score,comments:i.comments,authors:i.authors||""})) };
+      } catch(e) {
+        return { id:cat.id, label:cat.label, summary:"", count:catItems.length,
+          items:catItems.map(i=>({id:i.id,title:i.title,src:i.src,srcLabel:i.srcLabel,type:i.type,
+            heat:i.heat,time:i.time,timeLabel:i.timeLabel,link:i.link,sum:i.sum,
+            score:i.score,comments:i.comments,authors:i.authors||""})) };
+      }
+    });
+
+    const categories = (await Promise.all(categoryPromises)).filter(Boolean);
+    const digest = { categories, generatedAt: new Date().toISOString() };
+    DIGEST_CACHE = { data:digest, ts:Date.now() };
+    res.json(digest);
+  } catch(e) {
+    console.error("Digest error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── EMAIL DIGEST ───────────────────────────────────────────────
 
 // ── RATE LIMITER ────────────────────────────────────────────────
