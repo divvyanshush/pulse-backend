@@ -232,7 +232,7 @@ async function fetchLobsters() {
 }
 
 async function fetchGitHub() {
-  const res = await fetch("https://api.github.com/search/repositories?q=topic:llm+OR+topic:artificial-intelligence+OR+topic:machine-learning&sort=updated&order=desc&per_page=30", {
+  const res = await fetch("https://api.github.com/search/repositories?q=topic:llm+topic:ai&sort=updated&order=desc&per_page=30", {
     headers:{"Accept":"application/vnd.github.v3+json","User-Agent":"pulse-app/1.0"},
     signal:AbortSignal.timeout(10000)
   });
