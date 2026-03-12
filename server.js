@@ -95,18 +95,22 @@ const guessTags = (t, body="") => {
 
 // Source credibility weights — how much we trust each source
 const SRC_WEIGHT = {
-  // Tier 1 — primary developer signals
-  HN: 1.0, "Lobste.rs": 0.95, arXiv: 0.95,
-  GitHub: 0.9,
-  // Tier 2 — official company blogs
-  OpenAI: 0.92, Anthropic: 0.92, GoogleResearch: 0.90,
-  MetaAI: 0.88, HuggingFace: 0.88, Microsoft: 0.82,
-  // Tier 3 — good tech media
-  "Dev.to": 0.80, MITReview: 0.82, Interconnects: 0.82,
-  SimonW: 0.80, ImportAI: 0.80, TheSequence: 0.78,
+  // Tier 1 — must-read for AI builders
+  Karpathy: 1.4, LilianWeng: 1.3, SimonW: 1.25,
+  Anthropic: 1.2, OpenAI: 1.2, Mistral: 1.15,
+  DeepMind: 1.15, GoogleResearch: 1.1, MetaAI: 1.05,
+  Raschka: 1.05, Interconnects: 1.0, DeepLearningAI: 1.0,
+  // Tier 2 — strong community signals
+  HN: 1.0, "Lobste.rs": 0.95,
+  HuggingFace: 1.0, LangChain: 0.95, LlamaIndex: 0.95,
+  WandB: 0.95, FastAI: 0.95, TogetherAI: 0.92, Cohere: 0.92,
+  arXiv: 0.88, GitHub: 0.88, ImportAI: 0.88, TheSequence: 0.85,
+  // Tier 3 — useful but lower signal
+  Microsoft: 0.82, MITReview: 0.82, "Dev.to": 0.78,
+  TDS: 0.75, MarkTechPost: 0.72,
   // Tier 4 — general tech media
-  TechCrunch: 0.70, TheVerge: 0.68, VentureBeat: 0.68,
-  Wired: 0.65,
+  TechCrunch: 0.68, TheVerge: 0.65, VentureBeat: 0.65,
+  Wired: 0.62,
 };
 
 // Developer relevance keywords — boost items that matter to builders
