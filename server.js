@@ -349,6 +349,17 @@ async function fetchAll() {
     titleSeen.add(tk);
     return true;
   });
+  // Cap arXiv at top 25 by relevance score
+  const arxivItems = unique.filter(i => i.src === "arXiv")
+    .map(i => ({ ...i, _rel: ARXIV_RELEVANCE(i.title, i.sum) }))
+    .sort((a,b) => b._rel - a._rel || b.time - a.time)
+    .slice(0, 25);
+  const nonArxiv = unique.filter(i => i.src !== "arXiv");
+  const capped = [...nonArxiv, ...arxivItems];
+  capped.sort((a,b) => b.time - a.time);
+  const finalItems = capped;
+  unique.length = 0;
+  unique.push(...finalItems);
   unique.sort((a,b) => b.time - a.time);
   console.log(`✅ Total: ${unique.length} items\n`);
   return unique;
