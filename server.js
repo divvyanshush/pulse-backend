@@ -376,8 +376,9 @@ async function fetchAll() {
   unique.length = 0;
   unique.push(...finalItems);
   unique.sort((a,b) => b.time - a.time);
-  console.log(`✅ Total: ${unique.length} items\n`);
-  return unique;
+  const clustered = clusterItems(unique);
+  console.log(`✅ Total: ${clustered.length} items (clustered from ${unique.length})\n`);
+  return clustered;
 }
 
 // ── Background "why this matters" generator ────────────────────
