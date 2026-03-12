@@ -367,9 +367,10 @@ function clusterItems(items) {
       if(other.src === "GitHub") continue;
       const okw = getKeywords(other.title || "");
       const overlap = okw.filter(w => kw.has(w)).length;
-      // Need 2+ keyword overlap AND same rough time window (48h)
       const timeDiff = Math.abs((item.time||0) - (other.time||0));
-      if(overlap >= 2 && timeDiff < 172800) {
+      // HN/Lobsters need higher overlap threshold — titles are short and noisy
+      const threshold = (item.src==="HN"||item.src==="Lobste.rs"||other.src==="HN"||other.src==="Lobste.rs") ? 3 : 2;
+      if(overlap >= threshold && timeDiff < 172800) {
         related.push({ id:other.id, title:other.title, src:other.src, link:other.link, heat:other.heat });
         used.add(other.id);
       }
