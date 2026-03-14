@@ -310,18 +310,14 @@ const RSS_SOURCES = [
   { url:"https://www.marktechpost.com/feed/",             src:"MarkTechPost", label:"MarkTechPost",   aiOnly:true },
   { url:"https://bdtechtalks.com/feed/",                  src:"TechTalks",   label:"BD Tech Talks",   aiOnly:false },
   { url:"https://thesequence.substack.com/feed",          src:"TheSequence", label:"The Sequence",    aiOnly:true },
-  { url:"https://www.aiweekly.co/feed",                   src:"AIWeekly",    label:"AI Weekly",       aiOnly:true },
   { url:"https://lastweekin.ai/feed",                     src:"LastWeekInAI",label:"Last Week in AI", aiOnly:true },
   { url:"https://importai.substack.com/feed",             src:"ImportAI",    label:"Import AI",       aiOnly:true },
-  { url:"https://mistral.ai/news/feed.xml", src:"Mistral", label:"Mistral AI", aiOnly:true },
   { url:"https://www.together.ai/blog/rss.xml", src:"TogetherAI", label:"Together AI", aiOnly:true },
-  { url:"https://wandb.ai/fully-connected/feed", src:"WandB", label:"Weights & Biases", aiOnly:true },
+  { url:"https://wandb.ai/fully-connected/rss.xml", src:"WandB", label:"Weights & Biases", aiOnly:true },
   { url:"https://magazine.sebastianraschka.com/feed", src:"Raschka", label:"Sebastian Raschka", aiOnly:true },
-  { url:"https://lilianweng.github.io/feed.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
-  { url:"https://www.fast.ai/feed.xml", src:"FastAI", label:"fast.ai", aiOnly:true },
-  { url:"https://www.deeplearning.ai/the-batch/feed/", src:"DeepLearningAI", label:"The Batch", aiOnly:true },
+  { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
-  { url:"https://cohere.com/blog/rss", src:"Cohere", label:"Cohere Blog", aiOnly:true },
+  { url:"https://txt.cohere.ai/rss/", src:"Cohere", label:"Cohere Blog", aiOnly:true },
 ];
 
 
