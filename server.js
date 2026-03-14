@@ -277,7 +277,7 @@ async function fetchGitHub() {
 
 async function fetchRSS(url, src, srcLabel, aiOnly=false) {
   const feed = await parser.parseURL(url);
-  return (feed.items||[]).slice(0, 100)
+  return (feed.items||[]).slice(0, 20)
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
       id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
