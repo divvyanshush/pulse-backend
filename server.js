@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app    = express();
-const parser = new Parser({ timeout: 10000 });
+const parser = new Parser({ timeout: 10000, headers: { "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*" } });
 const PORT   = 3001;
 
 app.use(cors({ origin: "*" }));
@@ -291,7 +291,6 @@ async function fetchRSS(url, src, srcLabel, aiOnly=false) {
 
 const RSS_SOURCES = [
   { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog",    aiOnly:true },
-  { url:"https://www.anthropic.com/news/rss.xml",              src:"Anthropic",   label:"Anthropic Blog", aiOnly:true },
   { url:"https://deepmind.com/blog/feed/basic/", src:"DeepMind", label:"DeepMind Blog", aiOnly:true },
   { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog",aiOnly:true },
   { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI", aiOnly:true },
