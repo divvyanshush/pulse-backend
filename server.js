@@ -14,8 +14,22 @@ const PORT   = 3001;
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+// ── RATE LIMITER ─────────────────────────────────────────────────
+const rateLimitMap = new Map();
+const rateLimit = (key, maxReqs, windowMs) => {
+  const now = Date.now();
+  const record = rateLimitMap.get(key) || { count: 0, start: now };
+  if(now - record.start > windowMs) {
+    rateLimitMap.set(key, { count: 1, start: now });
+    return false;
+  }
+  record.count++;
+  rateLimitMap.set(key, record);
+  return record.count > maxReqs;
+};
+
 const CACHE = { items: [], lastFetch: 0 };
-const CACHE_TTL = 60_000;
+const CACHE_TTL = 14 * 60 * 1000; // 14 min — just under auto-refresh interval
 
 // ── Bookmarks storage ─────────────────────────────────────────────
 const BOOKMARKS_FILE = path.join(__dirname, "bookmarks.json");
@@ -82,7 +96,7 @@ const guessType = (t, body="", src="") => {
   // Drama
   if (/fired|resign|scandal|layoff|laid off/.test(title)) return "drama";
 
-  return "product";
+  return "tool";
 };
 
 
@@ -212,7 +226,7 @@ const ARXIV_RELEVANCE = (title, summary="") => {
 };
 
 async function fetchArxiv() {
-  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=30", {signal:AbortSignal.timeout(25000)});
+  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=30", {signal:AbortSignal.timeout(20000)});
   const text = await res.text();
   const entries = text.split("<entry>").slice(1);
   return entries.map(e => {
@@ -228,21 +242,21 @@ async function fetchArxiv() {
 }
 
 async function fetchDevTo() {
-  const res = await fetch("https://dev.to/api/articles?tag=ai&per_page=30&top=1", {signal:AbortSignal.timeout(10000)});
-  const json = await res.json();
-  return (json||[]).filter(a=>isAI(a.title+(a.description||""))).map(a=>({
+  const [r1, r2] = await Promise.allSettled([
+    fetch("https://dev.to/api/articles?tag=ai&per_page=30&top=1", {signal:AbortSignal.timeout(10000)}).then(r=>r.json()),
+    fetch("https://dev.to/api/articles?tag=machinelearning&per_page=20&top=1", {signal:AbortSignal.timeout(10000)}).then(r=>r.json()),
+  ]);
+  const seen = new Set();
+  const combined = [
+    ...(r1.status==="fulfilled" ? r1.value : []),
+    ...(r2.status==="fulfilled" ? r2.value : []),
+  ].filter(a => {
+    if(seen.has(a.id)) return false;
+    seen.add(a.id);
+    return isAI(a.title+(a.description||""));
+  });
+  return combined.map(a=>({
     id:`devto-${a.id}`, src:"Dev.to", type:guessType(a.title), tags:guessTags(a.title), title:a.title,
-    sum: safeText(a.description||"").slice(0,220)+"…",
-    link:a.url, time:Math.floor(new Date(a.published_at).getTime()/1000),
-    score:a.positive_reactions_count||0, comments:a.comments_count||0,
-  }));
-}
-
-async function fetchDevToML() {
-  const res = await fetch("https://dev.to/api/articles?tag=machinelearning&per_page=20&top=1", {signal:AbortSignal.timeout(10000)});
-  const json = await res.json();
-  return (json||[]).filter(a=>isAI(a.title+(a.description||""))).map(a=>({
-    id:`devto-ml-${a.id}`, src:"Dev.to", type:guessType(a.title), tags:guessTags(a.title), title:a.title,
     sum: safeText(a.description||"").slice(0,220)+"…",
     link:a.url, time:Math.floor(new Date(a.published_at).getTime()/1000),
     score:a.positive_reactions_count||0, comments:a.comments_count||0,
@@ -381,11 +395,11 @@ function clusterItems(items) {
 async function fetchAll() {
   console.log("🔄 Fetching all sources…");
   const results = await Promise.allSettled([
-    fetchHN(), fetchArxiv(), fetchDevTo(), fetchDevToML(),
+    fetchHN(), fetchArxiv(), fetchDevTo(),
     fetchLobsters(), fetchGitHub(),
     ...RSS_SOURCES.map(s => fetchRSS(s.url, s.src, s.label, s.aiOnly)),
   ]);
-  const labels = ["HN","arXiv","Dev.to(AI)","Dev.to(ML)","Lobste.rs","GitHub",...RSS_SOURCES.map(s=>s.label)];
+  const labels = ["HN","arXiv","Dev.to","Lobste.rs","GitHub",...RSS_SOURCES.map(s=>s.label)];
   const items = results
     .filter(r => r.status==="fulfilled")
     .flatMap(r => r.value)
@@ -861,19 +875,7 @@ Reply with ONLY the 2-sentence summary.`;
 
 // ── EMAIL DIGEST ───────────────────────────────────────────────
 
-// ── RATE LIMITER ────────────────────────────────────────────────
-const rateLimitMap = new Map();
-const rateLimit = (key, maxReqs, windowMs) => {
-  const now = Date.now();
-  const record = rateLimitMap.get(key) || { count: 0, start: now };
-  if(now - record.start > windowMs) {
-    rateLimitMap.set(key, { count: 1, start: now });
-    return false; // not limited
-  }
-  record.count++;
-  rateLimitMap.set(key, record);
-  return record.count > maxReqs; // true = limited
-};
+
 
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -915,13 +917,13 @@ app.post("/send-digest", async (req, res) => {
       <body style="margin:0;padding:0;background:#050507;font-family:'Courier New',monospace;">
         <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
           <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #111128;">
-            <div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;margin-bottom:6px;">PULSE</div>
-            <div style="font-size:11px;color:#555570;letter-spacing:0.12em;">AI SIGNALS FOR DEVELOPERS · DAILY DIGEST</div>
+            <div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;margin-bottom:6px;">COBUN AI</div>
+            <div style="font-size:11px;color:#555570;letter-spacing:0.12em;">AI INTELLIGENCE FOR DEVELOPERS · DAILY DIGEST</div>
           </div>
           <div style="margin-bottom:8px;font-size:11px;color:#555570;letter-spacing:0.1em;">TOP STORIES TODAY</div>
           ${rows}
           <div style="margin-top:32px;padding-top:24px;border-top:1px solid #111128;text-align:center;">
-            <a href="https://pulse-ui-gilt.vercel.app" style="display:inline-block;padding:10px 24px;background:#00ff88;color:#000;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;border-radius:4px;">OPEN PULSE</a>
+            <a href="https://cobunai.com" style="display:inline-block;padding:10px 24px;background:#ececec;color:#141414;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;border-radius:4px;">Open Cobun AI</a>
             <p style="margin-top:16px;font-size:10px;color:#333350;">You're receiving this because you enabled daily digest in Pulse.</p>
           </div>
         </div>
@@ -930,9 +932,9 @@ app.post("/send-digest", async (req, res) => {
     `;
 
     await resend.emails.send({
-      from: "Pulse <onboarding@resend.dev>",
+      from: "Cobun AI <onboarding@resend.dev>",
       to: email,
-      subject: `Pulse Daily · ${top.length} AI signals for you`,
+      subject: `Cobun AI Daily · ${top.length} AI signals for you`,
       html,
     });
 
