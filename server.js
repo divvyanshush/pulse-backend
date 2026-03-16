@@ -312,7 +312,10 @@ async function fetchGitHub() {
 }
 
 async function fetchRSS(url, src, srcLabel, aiOnly=false, customHeaders={}) {
-  const feed = await parser.parseURL(url, { headers: customHeaders });
+  const feedParser = Object.keys(customHeaders).length > 0
+    ? new Parser({ timeout:10000, headers:{ "Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml, */*", ...customHeaders } })
+    : parser;
+  const feed = await feedParser.parseURL(url);
   return (feed.items||[]).slice(0, 20)
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
