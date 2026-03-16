@@ -195,9 +195,25 @@ const safeText = t => (t||"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
 // ── FETCHERS ──────────────────────────────────────────────────────
 
 async function fetchHN() {
-  const res = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json", {signal:AbortSignal.timeout(10000)});
-  const ids = (await res.json()).slice(0, 200);
-  const rows = await Promise.allSettled(ids.map(id =>
+  // Fetch top, ask, and show stories in parallel
+  const [topRes, askRes, showRes] = await Promise.allSettled([
+    fetch("https://hacker-news.firebaseio.com/v0/topstories.json", {signal:AbortSignal.timeout(10000)}).then(r=>r.json()),
+    fetch("https://hacker-news.firebaseio.com/v0/askstories.json", {signal:AbortSignal.timeout(10000)}).then(r=>r.json()),
+    fetch("https://hacker-news.firebaseio.com/v0/showstories.json", {signal:AbortSignal.timeout(10000)}).then(r=>r.json()),
+  ]);
+
+  const topIds = topRes.status==="fulfilled" ? topRes.value.slice(0,200) : [];
+  const askIds = askRes.status==="fulfilled" ? askRes.value.slice(0,50) : [];
+  const showIds = showRes.status==="fulfilled" ? showRes.value.slice(0,50) : [];
+
+  const seen = new Set();
+  const allIds = [...topIds, ...askIds, ...showIds].filter(id => {
+    if(seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+
+  const rows = await Promise.allSettled(allIds.map(id =>
     fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, {signal:AbortSignal.timeout(6000)}).then(r=>r.json())
   ));
   return rows
@@ -351,10 +367,7 @@ const RSS_SOURCES = [
   { url:"https://magazine.sebastianraschka.com/feed", src:"Raschka", label:"Sebastian Raschka", aiOnly:true },
   { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
-  { url:"https://www.reddit.com/r/LocalLLaMA/.rss", src:"Reddit", label:"r/LocalLLaMA", aiOnly:true, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
-  { url:"https://www.reddit.com/r/MachineLearning/.rss", src:"Reddit", label:"r/MachineLearning", aiOnly:false, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
-  { url:"https://www.reddit.com/r/artificial/.rss", src:"Reddit", label:"r/artificial", aiOnly:false, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
-  { url:"https://www.reddit.com/r/singularity/.rss", src:"Reddit", label:"r/singularity", aiOnly:false, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
+  { url:"https://www.producthunt.com/feed", src:"ProductHunt", label:"Product Hunt", aiOnly:false },
 ];
 
 
