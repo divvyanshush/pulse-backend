@@ -348,6 +348,10 @@ const RSS_SOURCES = [
   { url:"https://magazine.sebastianraschka.com/feed", src:"Raschka", label:"Sebastian Raschka", aiOnly:true },
   { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
+  { url:"https://www.reddit.com/r/LocalLLaMA/.rss", src:"Reddit", label:"r/LocalLLaMA", aiOnly:true },
+  { url:"https://www.reddit.com/r/MachineLearning/.rss", src:"Reddit", label:"r/MachineLearning", aiOnly:false },
+  { url:"https://www.reddit.com/r/artificial/.rss", src:"Reddit", label:"r/artificial", aiOnly:false },
+  { url:"https://www.reddit.com/r/singularity/.rss", src:"Reddit", label:"r/singularity", aiOnly:false },
 ];
 
 
