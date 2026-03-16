@@ -276,17 +276,39 @@ async function fetchLobsters() {
 }
 
 async function fetchGitHub() {
-  const res = await fetch("https://api.github.com/search/repositories?q=topic:llm+stars:%3E500&sort=updated&order=desc&per_page=30", {
-    headers:{"Accept":"application/vnd.github.v3+json","User-Agent":"pulse-app/1.0"},
-    signal:AbortSignal.timeout(10000)
-  });
-  const json = await res.json();
-  return (json?.items||[]).map(r=>({
-    id:`github-${r.id}`, src:"GitHub", type:"repo", title:`${r.full_name} — ${r.description||""}`.slice(0,100),
-    sum:(r.description||"No description.").slice(0,220),
-    link:r.html_url, time:Math.floor(new Date(r.pushed_at||r.updated_at).getTime()/1000),
-    score:r.stargazers_count||0, comments:r.forks_count||0,
-  }));
+  const queries = [
+    "topic:llm+stars:%3E200",
+    "topic:ai-agents+stars:%3E100",
+    "topic:large-language-models+stars:%3E100",
+    "topic:generative-ai+stars:%3E200",
+    "topic:rag+stars:%3E100",
+  ];
+
+  const results = await Promise.allSettled(queries.map(q =>
+    fetch(`https://api.github.com/search/repositories?q=${q}&sort=updated&order=desc&per_page=15`, {
+      headers:{"Accept":"application/vnd.github.v3+json","User-Agent":"pulse-app/1.0"},
+      signal:AbortSignal.timeout(10000)
+    }).then(r=>r.json())
+  ));
+
+  const seen = new Set();
+  const repos = [];
+  for(const r of results) {
+    if(r.status !== "fulfilled") continue;
+    for(const repo of (r.value?.items||[])) {
+      if(seen.has(repo.id)) continue;
+      seen.add(repo.id);
+      repos.push({
+        id:`github-${repo.id}`, src:"GitHub", type:"repo",
+        title:`${repo.full_name} — ${repo.description||""}`.slice(0,100),
+        sum:(repo.description||"No description.").slice(0,220),
+        link:repo.html_url,
+        time:Math.floor(new Date(repo.pushed_at||repo.updated_at).getTime()/1000),
+        score:repo.stargazers_count||0, comments:repo.forks_count||0,
+      });
+    }
+  }
+  return repos;
 }
 
 async function fetchRSS(url, src, srcLabel, aiOnly=false) {
