@@ -528,9 +528,8 @@ ${top30.map(i=>`{"id":"${i.id}","title":${JSON.stringify(i.title)},"sum":${JSON.
 // Feed
 
 // ── Daily Briefing ──────────────────────────────────────────────
-let BRIEFING_CACHE = { data: null, ts: 0 };
-
-app.get("/briefing", async (req, res) => {
+// /briefing removed — use /digest
+if(false) app.get("/briefing", async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   // Cache for 30 minutes
@@ -638,6 +637,7 @@ app.get("/feed", async (req, res) => {
     const fetched = await fetchAll();
     CACHE.items = fetched;
     CACHE.lastFetch = Date.now();
+    DIGEST_CACHE = { data: null, ts: 0 }; // invalidate digest when feed refreshes
     res.json({ items: CACHE.items, cached: false, age: 0 });
   } catch(err) {
     console.error(err);
@@ -737,6 +737,7 @@ setInterval(async () => {
     console.log("🔄 Auto-refreshing cache…");
     CACHE.items = await fetchAll();
     CACHE.lastFetch = Date.now();
+    DIGEST_CACHE = { data: null, ts: 0 }; // invalidate digest on auto-refresh
     console.log(`✅ Cache refreshed — ${CACHE.items.length} items`);
   } catch(e) {
     console.error("Auto-refresh failed:", e.message);
@@ -886,7 +887,7 @@ Reply with ONLY the 2-sentence summary.`;
     });
 
     const categories = (await Promise.all(categoryPromises)).filter(Boolean);
-    const digest = { categories, generatedAt: new Date().toISOString() };
+    const digest = { categories, generatedAt: new Date().toISOString(), feedAge: Math.round((Date.now() - CACHE.lastFetch)/1000) };
     DIGEST_CACHE = { data:digest, ts:Date.now() };
     res.json(digest);
   } catch(e) {
