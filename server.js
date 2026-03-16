@@ -311,8 +311,8 @@ async function fetchGitHub() {
   return repos;
 }
 
-async function fetchRSS(url, src, srcLabel, aiOnly=false) {
-  const feed = await parser.parseURL(url);
+async function fetchRSS(url, src, srcLabel, aiOnly=false, customHeaders={}) {
+  const feed = await parser.parseURL(url, { headers: customHeaders });
   return (feed.items||[]).slice(0, 20)
     .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
     .map(e=>({
@@ -348,10 +348,10 @@ const RSS_SOURCES = [
   { url:"https://magazine.sebastianraschka.com/feed", src:"Raschka", label:"Sebastian Raschka", aiOnly:true },
   { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
-  { url:"https://www.reddit.com/r/LocalLLaMA/.rss", src:"Reddit", label:"r/LocalLLaMA", aiOnly:true },
-  { url:"https://www.reddit.com/r/MachineLearning/.rss", src:"Reddit", label:"r/MachineLearning", aiOnly:false },
-  { url:"https://www.reddit.com/r/artificial/.rss", src:"Reddit", label:"r/artificial", aiOnly:false },
-  { url:"https://www.reddit.com/r/singularity/.rss", src:"Reddit", label:"r/singularity", aiOnly:false },
+  { url:"https://www.reddit.com/r/LocalLLaMA/.rss", src:"Reddit", label:"r/LocalLLaMA", aiOnly:true, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
+  { url:"https://www.reddit.com/r/MachineLearning/.rss", src:"Reddit", label:"r/MachineLearning", aiOnly:false, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
+  { url:"https://www.reddit.com/r/artificial/.rss", src:"Reddit", label:"r/artificial", aiOnly:false, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
+  { url:"https://www.reddit.com/r/singularity/.rss", src:"Reddit", label:"r/singularity", aiOnly:false, headers:{"User-Agent":"Mozilla/5.0 (compatible; pulse-aggregator/1.0; +https://cobunai.com)"} },
 ];
 
 
@@ -423,7 +423,7 @@ async function fetchAll() {
   const results = await Promise.allSettled([
     fetchHN(), fetchArxiv(), fetchDevTo(),
     fetchLobsters(), fetchGitHub(),
-    ...RSS_SOURCES.map(s => fetchRSS(s.url, s.src, s.label, s.aiOnly)),
+    ...RSS_SOURCES.map(s => fetchRSS(s.url, s.src, s.label, s.aiOnly, s.headers||{})),
   ]);
   const labels = ["HN","arXiv","Dev.to","Lobste.rs","GitHub",...RSS_SOURCES.map(s=>s.label)];
   const items = results
