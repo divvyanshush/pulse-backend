@@ -668,6 +668,22 @@ app.get("/feed", async (req, res) => {
 // Health
 app.get("/health", (_, res) => res.json({ ok:true, items:CACHE.items.length, lastFetch:CACHE.lastFetch }));
 
+// Force cache refresh
+app.get("/refresh", async (req, res) => {
+  try {
+    console.log("🔄 Manual refresh triggered");
+    CACHE.items = [];
+    CACHE.lastFetch = 0;
+    DIGEST_CACHE = { data: null, ts: 0 };
+    const items = await fetchAll();
+    CACHE.items = items;
+    CACHE.lastFetch = Date.now();
+    res.json({ ok: true, items: items.length });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── AI SUMMARY ────────────────────────────────────────────────────
 // POST /summarize  { title, sum, src, type }
 // Returns { summary: "…" }
