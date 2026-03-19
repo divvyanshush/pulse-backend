@@ -943,16 +943,15 @@ Reply with ONLY the 2-sentence summary.`;
 
 
 import { createClient } from "@supabase/supabase-js";
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
-
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.post("/send-digest", async (req, res) => {
   try {
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
     // Get all users with email_digest enabled
     const { data: prefs, error: prefsError } = await supabase
       .from("user_preferences")
