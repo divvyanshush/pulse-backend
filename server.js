@@ -346,7 +346,7 @@ async function fetchRSS(url, src, srcLabel, aiOnly=false, customHeaders={}) {
 
 const RSS_SOURCES = [
   { url:"https://openai.com/blog/rss.xml",                src:"OpenAI",      label:"OpenAI Blog",    aiOnly:true },
-  { url:"https://deepmind.com/blog/feed/basic/", src:"DeepMind", label:"DeepMind Blog", aiOnly:true },
+  { url:"https://deepmind.google/blog/feed/basic/", src:"DeepMind", label:"DeepMind Blog", aiOnly:true },
   { url:"https://huggingface.co/blog/feed.xml",           src:"HuggingFace", label:"HuggingFace Blog",aiOnly:true },
   { url:"https://venturebeat.com/category/ai/feed/",      src:"VentureBeat", label:"VentureBeat AI", aiOnly:true },
   { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI", aiOnly:true },
