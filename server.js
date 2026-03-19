@@ -948,7 +948,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 app.post("/send-digest", async (req, res) => {
   try {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-
     const { data: prefs } = await supabase.from("user_preferences").select("user_id").eq("email_digest", true);
     if(!prefs?.length) return res.json({ ok: true, sent: 0 });
 
@@ -962,76 +961,25 @@ app.post("/send-digest", async (req, res) => {
     const top = (digest.categories || []).flatMap(c => c.items || []).slice(0, 8);
     if(!top.length) return res.json({ ok: true, sent: 0 });
 
-    const typeColors = { model:"#00ff88", research:"#4da6ff", funding:"#ffd700", product:"#c77dff", policy:"#ff9f43", drama:"#ff4d6d" };
+    const typeColors = { model:"#00ff88", research:"#4da6ff", funding:"#ffd700", tool:"#c77dff", policy:"#ff9f43" };
     const rows = top.map(item => {
       const color = typeColors[item.type] || "#c77dff";
-      return `<div style="padding:16px 0;border-bottom:1px solid #111128;"><div style="margin-bottom:8px;"><span style="font-size:10px;padding:2px 7px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;font-weight:600;letter-spacing:0.08em;">${(item.type||"").toUpperCase()}</span></div><a href="${item.link}" style="color:#d8d8f0;text-decoration:none;font-size:14px;font-weight:500;line-height:1.5;display:block;margin-bottom:8px;">${item.title}</a><p style="color:#8888aa;font-size:12px;line-height:1.6;margin:0 0 8px;">${(item.sum||"").slice(0,200)}${(item.sum||"").length>200?"…":""}</p><span style="font-size:11px;color:#555570;">${item.src||""}</span></div>`;
+      return `<div style="padding:16px 0;border-bottom:1px solid #111128;"><span style="font-size:10px;padding:2px 7px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;font-weight:600;letter-spacing:0.08em;">${(item.type||"").toUpperCase()}</span><br/><a href="${item.link}" style="color:#d8d8f0;text-decoration:none;font-size:14px;font-weight:500;line-height:1.5;display:block;margin:8px 0;">${item.title}</a><p style="color:#8888aa;font-size:12px;line-height:1.6;margin:0;">${(item.sum||"").slice(0,200)}</p></div>`;
     }).join("");
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#050507;font-family:'Courier New',monospace;"><div style="max-width:600px;margin:0 auto;padding:32px 24px;"><div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #111128;"><div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;margin-bottom:6px;">COBUN AI</div><div style="font-size:11px;color:#555570;letter-spacing:0.12em;">AI INTELLIGENCE FOR DEVELOPERS · DAILY DIGEST</div></div><div style="margin-bottom:8px;font-size:11px;color:#555570;letter-spacing:0.1em;">TOP STORIES TODAY</div>${rows}<div style="margin-top:32px;padding-top:24px;border-top:1px solid #111128;text-align:center;"><a href="https://cobunai.com" style="display:inline-block;padding:10px 24px;background:#ececec;color:#141414;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;border-radius:4px;">Open Cobun AI</a><p style="margin-top:16px;font-size:10px;color:#333350;">You're receiving this because you enabled daily email digest in Cobun AI.</p></div></div></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#050507;font-family:sans-serif;"><div style="max-width:600px;margin:0 auto;padding:32px 24px;"><div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #111128;"><div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;">COBUN AI</div><div style="font-size:11px;color:#555570;letter-spacing:0.12em;">DAILY AI DIGEST FOR DEVELOPERS</div></div>${rows}<div style="margin-top:32px;text-align:center;"><a href="https://cobunai.com" style="display:inline-block;padding:10px 24px;background:#ececec;color:#141414;font-size:12px;font-weight:600;text-decoration:none;border-radius:4px;">Open Cobun AI</a><p style="margin-top:16px;font-size:10px;color:#333350;">You enabled daily digest in Cobun AI settings.</p></div></div></body></html>`;
 
     let sent = 0;
     for(const u of eligibleUsers) {
-      await resend.emails.send({ from:"Cobun AI <onboarding@resend.dev>", to:u.email, subject:`Cobun AI Daily · ${top.length} AI signals`, html });
+      await resend.emails.send({ from:"Cobun AI <onboarding@resend.dev>", to:u.email, subject:`Cobun AI Daily — ${top.length} AI signals`, html });
       sent++;
     }
     res.json({ ok: true, sent });
-
-    const top = items.slice(0, 8);
-
-    const typeColors = {
-      model:"#00ff88", research:"#4da6ff", funding:"#ffd700",
-      product:"#c77dff", policy:"#ff9f43", drama:"#ff4d6d"
-    };
-
-    const rows = top.map(item => {
-      const color = typeColors[item.type] || "#c77dff";
-      const tags = (item.tags||[]).map(t =>
-        `<span style="font-size:10px;padding:2px 6px;border-radius:2px;background:#1a1a2e;color:#8888aa;border:1px solid #111128;margin-right:4px;">${t}</span>`
-      ).join("");
-      return `
-        <div style="padding:16px 0;border-bottom:1px solid #111128;">
-          <div style="margin-bottom:8px;">
-            <span style="font-size:10px;padding:2px 7px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;font-weight:600;letter-spacing:0.08em;">${item.type?.toUpperCase()}</span>
-          </div>
-          <a href="${item.link}" style="color:#d8d8f0;text-decoration:none;font-size:14px;font-weight:500;line-height:1.5;display:block;margin-bottom:8px;">${item.title}</a>
-          <p style="color:#8888aa;font-size:12px;line-height:1.6;margin:0 0 8px;">${(item.sum||"").slice(0,200)}${item.sum?.length>200?"…":""}</p>
-          ${tags ? `<div style="margin-bottom:4px;">${tags}</div>` : ""}
-          <span style="font-size:11px;color:#555570;">${item.srcLabel||item.src} · ${item.timeLabel||""}</span>
-        </div>
-      `;
-    }).join("");
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="UTF-8"/></head>
-      <body style="margin:0;padding:0;background:#050507;font-family:'Courier New',monospace;">
-        <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
-          <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #111128;">
-            <div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;margin-bottom:6px;">COBUN AI</div>
-            <div style="font-size:11px;color:#555570;letter-spacing:0.12em;">AI INTELLIGENCE FOR DEVELOPERS · DAILY DIGEST</div>
-          </div>
-          <div style="margin-bottom:8px;font-size:11px;color:#555570;letter-spacing:0.1em;">TOP STORIES TODAY</div>
-          ${rows}
-          <div style="margin-top:32px;padding-top:24px;border-top:1px solid #111128;text-align:center;">
-            <a href="https://cobunai.com" style="display:inline-block;padding:10px 24px;background:#ececec;color:#141414;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;border-radius:4px;">Open Cobun AI</a>
-            <p style="margin-top:16px;font-size:10px;color:#333350;">You're receiving this because you enabled daily email digest in Cobun AI. Open the app to turn it off.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    await resend.emails.send({
-      from: "Cobun AI <onboarding@resend.dev>",
-      to: email,
   } catch(e) {
     console.error("send-digest error:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
-
 
 // ── KEEP ALIVE (prevent Railway sleep) ─────────────────────────
 const SELF_URL = process.env.RAILWAY_PUBLIC_DOMAIN 
