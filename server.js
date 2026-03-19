@@ -942,13 +942,43 @@ Reply with ONLY the 2-sentence summary.`;
 
 
 
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.post("/send-digest", async (req, res) => {
   try {
-    const { email, items } = req.body;
-    if(!email || !items?.length) return res.status(400).json({ error: "Missing email or items" });
+    // Get all users with email_digest enabled
+    const { data: prefs, error: prefsError } = await supabase
+      .from("user_preferences")
+      .select("user_id, email_digest")
+      .eq("email_digest", true);
+
+    if(prefsError) return res.status(500).json({ error: prefsError.message });
+    if(!prefs?.length) return res.json({ ok: true, sent: 0 });
+
+    // Get emails for these users
+    const userIds = prefs.map(p => p.user_id);
+    const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+    if(usersError) return res.status(500).json({ error: usersError.message });
+
+    const eligibleUsers = (users?.users || []).filter(u => userIds.includes(u.id) && u.email);
+
+    // Get current digest
+    const digestRes = await fetch(`http://localhost:${PORT}/digest`);
+    const digest = await digestRes.json();
+    const items = (digest.categories || []).flatMap(c => c.items || []).slice(0, 8);
+
+    if(!items.length) return res.json({ ok: true, sent: 0 });
+
+    let sent = 0;
+    for(const user of eligibleUsers) {
+      const email = user.email;
 
     const top = items.slice(0, 8);
 
@@ -989,7 +1019,7 @@ app.post("/send-digest", async (req, res) => {
           ${rows}
           <div style="margin-top:32px;padding-top:24px;border-top:1px solid #111128;text-align:center;">
             <a href="https://cobunai.com" style="display:inline-block;padding:10px 24px;background:#ececec;color:#141414;font-size:12px;font-weight:600;letter-spacing:0.1em;text-decoration:none;border-radius:4px;">Open Cobun AI</a>
-            <p style="margin-top:16px;font-size:10px;color:#333350;">You're receiving this because you enabled daily digest in Pulse.</p>
+            <p style="margin-top:16px;font-size:10px;color:#333350;">You're receiving this because you enabled daily email digest in Cobun AI. Open the app to turn it off.</p>
           </div>
         </div>
       </body>
@@ -1003,7 +1033,9 @@ app.post("/send-digest", async (req, res) => {
       html,
     });
 
-    res.json({ ok: true });
+      sent++;
+    }
+    res.json({ ok: true, sent });
   } catch(e) {
     console.error("send-digest error:", e.message);
     res.status(500).json({ error: e.message });
