@@ -771,10 +771,15 @@ app.delete("/bookmarks/:id", (req, res) => {
 setInterval(async () => {
   try {
     console.log("🔄 Auto-refreshing cache…");
-    CACHE.items = await fetchAll();
-    CACHE.lastFetch = Date.now();
-    DIGEST_CACHE = { data: null, ts: 0 }; // invalidate digest on auto-refresh
-    console.log(`✅ Cache refreshed — ${CACHE.items.length} items`);
+    const newItems = await fetchAll();
+    if(newItems && newItems.length > 0) {
+      CACHE.items = newItems;
+      CACHE.lastFetch = Date.now();
+      DIGEST_CACHE = { data: null, ts: 0 }; // invalidate digest on auto-refresh
+      console.log(`✅ Cache refreshed — ${CACHE.items.length} items`);
+    } else {
+      console.log("⚠️ fetchAll returned empty — keeping existing cache");
+    }
   } catch(e) {
     console.error("Auto-refresh failed:", e.message);
   }
