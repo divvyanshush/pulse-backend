@@ -133,7 +133,7 @@ const SRC_WEIGHT = {
   HN: 1.0, "Lobste.rs": 0.95, LessWrong: 0.9, AlignmentForum: 0.9,
   HuggingFace: 1.0, LangChain: 0.95, LlamaIndex: 0.95,
   WandB: 0.95, FastAI: 0.95, TogetherAI: 0.92, Cohere: 0.92,
-  arXiv: 0.88, GitHub: 0.88, ImportAI: 0.88, TheSequence: 0.85,
+  arXiv: 0.88, GitHub: 0.88, ImportAI: 1.05, TheSequence: 0.92,
   // Tier 3 — useful but lower signal
   Microsoft: 0.82, MITReview: 0.82, "Dev.to": 0.78,
   TDS: 0.75, MarkTechPost: 0.72,
@@ -367,7 +367,6 @@ const RSS_SOURCES = [
   { url:"https://magazine.sebastianraschka.com/feed", src:"Raschka", label:"Sebastian Raschka", aiOnly:true },
   { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
-  { url:"https://www.producthunt.com/feed", src:"ProductHunt", label:"Product Hunt", aiOnly:false },
   { url:"https://www.lesswrong.com/feed.xml", src:"LessWrong", label:"LessWrong", aiOnly:false },
   { url:"https://alignmentforum.org/feed.xml", src:"AlignmentForum", label:"Alignment Forum", aiOnly:false },
 ];
