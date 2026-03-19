@@ -1,4 +1,5 @@
 import express from "express";
+import { createClient } from "@supabase/supabase-js";
 import cors from "cors";
 import fetch from "node-fetch";
 import Parser from "rss-parser";
@@ -941,9 +942,6 @@ Reply with ONLY the 2-sentence summary.`;
 // ── EMAIL DIGEST ───────────────────────────────────────────────
 
 
-
-import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.post("/send-digest", async (req, res) => {
