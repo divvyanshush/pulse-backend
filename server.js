@@ -967,13 +967,14 @@ app.post("/send-digest", async (req, res) => {
     const top = [...picked, ...rest].slice(0, 8);
     if(!top.length) return res.json({ ok: true, sent: 0 });
 
-    const typeColors = { model:"#00ff88", research:"#4da6ff", funding:"#ffd700", tool:"#c77dff", policy:"#ff9f43" };
     const rows = top.map(item => {
-      const color = typeColors[item.type] || "#c77dff";
-      return `<div style="padding:16px 0;border-bottom:1px solid #111128;"><span style="font-size:10px;padding:2px 7px;border-radius:2px;background:${color}22;color:${color};border:1px solid ${color}44;font-weight:600;letter-spacing:0.08em;">${(item.type||"").toUpperCase()}</span><br/><a href="${item.link}" style="color:#d8d8f0;text-decoration:none;font-size:14px;font-weight:500;line-height:1.5;display:block;margin:8px 0;">${item.title}</a><p style="color:#8888aa;font-size:12px;line-height:1.6;margin:0;">${(item.sum||"").slice(0,200)}</p></div>`;
+      const color = typeColors[item.type] || "#8b5cf6";
+      return `<div style="padding:20px 0;border-bottom:1px solid #f0f0f0;"><span style="font-size:10px;padding:2px 8px;border-radius:3px;background:${color}18;color:${color};border:1px solid ${color}33;font-weight:700;letter-spacing:0.08em;">${(item.type||"").toUpperCase()}</span><br/><a href="${item.link}" style="color:#141414;text-decoration:none;font-size:15px;font-weight:600;line-height:1.5;display:block;margin:8px 0;">${item.title}</a><p style="color:#666;font-size:13px;line-height:1.6;margin:0;">${(item.sum||"").slice(0,200)}</p></div>`;
     }).join("");
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#050507;font-family:sans-serif;"><div style="max-width:600px;margin:0 auto;padding:32px 24px;"><div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #111128;"><div style="font-size:22px;font-weight:700;color:#d8d8f0;letter-spacing:0.2em;">COBUN AI</div><div style="font-size:11px;color:#555570;letter-spacing:0.12em;">DAILY AI DIGEST FOR DEVELOPERS</div></div>${rows}<div style="margin-top:32px;text-align:center;"><a href="https://cobunai.com" style="display:inline-block;padding:10px 24px;background:#ececec;color:#141414;font-size:12px;font-weight:600;text-decoration:none;border-radius:4px;">Open Cobun AI</a><p style="margin-top:16px;font-size:10px;color:#333350;">You are receiving this as a Cobun AI user.</p></div></div></body></html>`;
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const typeColors = { model:"#6366f1", research:"#3b82f6", funding:"#f59e0b", tool:"#8b5cf6", policy:"#ef4444", discuss:"#6b7280", repo:"#10b981", drama:"#f97316" };
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#f5f5f5;font-family:'Helvetica Neue',Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;background:#ffffff;"><div style="padding:32px 32px 24px;border-bottom:1px solid #ebebeb;"><div style="font-size:18px;font-weight:700;color:#141414;letter-spacing:0.15em;">COBUN AI</div><div style="font-size:12px;color:#888;margin-top:4px;">Today's AI signals — ${today}</div></div><div style="padding:8px 32px 24px;">${rows}</div><div style="padding:24px 32px;border-top:1px solid #ebebeb;text-align:center;background:#fafafa;"><a href="https://cobunai.com" style="display:inline-block;padding:10px 28px;background:#141414;color:#ffffff;font-size:12px;font-weight:600;text-decoration:none;border-radius:4px;letter-spacing:0.05em;">Open Cobun AI</a><p style="margin-top:16px;font-size:10px;color:#aaa;">You are receiving this as a Cobun AI user.</p></div></div></body></html>`;
 
     let sent = 0;
     for(const u of eligibleUsers) {
