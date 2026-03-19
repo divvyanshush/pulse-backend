@@ -242,7 +242,7 @@ const ARXIV_RELEVANCE = (title, summary="") => {
 };
 
 async function fetchArxiv() {
-  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=30", {signal:AbortSignal.timeout(20000)});
+  const res = await fetch("https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.CV&sortBy=lastUpdatedDate&sortOrder=descending&max_results=60", {signal:AbortSignal.timeout(20000)});
   const text = await res.text();
   const entries = text.split("<entry>").slice(1);
   return entries.map(e => {
