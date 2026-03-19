@@ -1,5 +1,6 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 import cors from "cors";
 import fetch from "node-fetch";
 import Parser from "rss-parser";
