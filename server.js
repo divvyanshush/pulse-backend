@@ -75,7 +75,7 @@ const guessType = (t, body="", src="") => {
 
   // Source-based — most reliable signal
   if(src==="GitHub") return "repo";
-  if(src==="HN" || src==="Lobste.rs") return "discuss";
+  if(src==="HN" || src==="Lobste.rs" || src==="LessWrong" || src==="AlignmentForum") return "discuss";
   if(src==="arXiv") return "research";
 
   // Funding — very specific signals only
@@ -130,7 +130,7 @@ const SRC_WEIGHT = {
   DeepMind: 1.15, GoogleResearch: 1.1, MetaAI: 1.05,
   Raschka: 1.05, Interconnects: 1.0, DeepLearningAI: 1.0,
   // Tier 2 — strong community signals
-  HN: 1.0, "Lobste.rs": 0.95,
+  HN: 1.0, "Lobste.rs": 0.95, LessWrong: 0.9, AlignmentForum: 0.9,
   HuggingFace: 1.0, LangChain: 0.95, LlamaIndex: 0.95,
   WandB: 0.95, FastAI: 0.95, TogetherAI: 0.92, Cohere: 0.92,
   arXiv: 0.88, GitHub: 0.88, ImportAI: 0.88, TheSequence: 0.85,
@@ -368,6 +368,8 @@ const RSS_SOURCES = [
   { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
   { url:"https://www.producthunt.com/feed", src:"ProductHunt", label:"Product Hunt", aiOnly:false },
+  { url:"https://www.lesswrong.com/feed.xml", src:"LessWrong", label:"LessWrong", aiOnly:false },
+  { url:"https://alignmentforum.org/feed.xml", src:"AlignmentForum", label:"Alignment Forum", aiOnly:false },
 ];
 
 
