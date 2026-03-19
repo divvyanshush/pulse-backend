@@ -967,7 +967,7 @@ app.post("/send-digest", async (req, res) => {
 
     let sent = 0;
     for(const u of eligibleUsers) {
-      await resend.emails.send({ from:"Cobun AI <onboarding@resend.dev>", to:u.email, subject:`Cobun AI Daily — ${top.length} AI signals`, html });
+      await resend.emails.send({ from:"Cobun AI <digest@cobunai.com>", to:u.email, subject:`Cobun AI Daily — ${top.length} AI signals`, html });
       sent++;
     }
     res.json({ ok: true, sent });
