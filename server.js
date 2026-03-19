@@ -948,12 +948,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 app.post("/send-digest", async (req, res) => {
   try {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-    const { data: prefs } = await supabase.from("user_preferences").select("user_id").eq("email_digest", true);
-    if(!prefs?.length) return res.json({ ok: true, sent: 0 });
-
-    const userIds = prefs.map(p => p.user_id);
     const { data: users } = await supabase.auth.admin.listUsers();
-    const eligibleUsers = (users?.users || []).filter(u => userIds.includes(u.id) && u.email);
+    const eligibleUsers = (users?.users || []).filter(u => u.email);
     if(!eligibleUsers.length) return res.json({ ok: true, sent: 0 });
 
     const digestRes = await fetch(`http://localhost:${PORT}/digest`);
