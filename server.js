@@ -967,7 +967,8 @@ app.post("/send-digest", async (req, res) => {
 
     let sent = 0;
     for(const u of eligibleUsers) {
-      await resend.emails.send({ from:"Cobun AI <digest@cobunai.com>", to:u.email, subject:`Cobun AI Daily — ${top.length} AI signals`, html });
+      const text = top.map(item => `${(item.type||'').toUpperCase()}: ${item.title}\n${item.link}`).join('\n\n') + '\n\nUnsubscribe: https://cobunai.com/app';
+      await resend.emails.send({ from:"Cobun AI <digest@cobunai.com>", to:u.email, subject:`Cobun AI Daily — ${top.length} AI signals`, html: html + '<div style="text-align:center;margin-top:24px;"><a href="https://cobunai.com/app" style="font-size:10px;color:#444;text-decoration:underline;">Unsubscribe</a></div>', text });
       sent++;
     }
     res.json({ ok: true, sent });
