@@ -269,7 +269,7 @@ async function fetchDevTo() {
   ].filter(a => {
     if(seen.has(a.id)) return false;
     seen.add(a.id);
-    return isAI(a.title+(a.description||""));
+    return true; // arXiv already filtered to AI categories
   });
   return combined.map(a=>({
     id:`devto-${a.id}`, src:"Dev.to", type:guessType(a.title), tags:guessTags(a.title), title:a.title,
