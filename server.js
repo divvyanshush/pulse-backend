@@ -776,9 +776,17 @@ setInterval(async () => {
     console.log("🔄 Auto-refreshing cache…");
     const newItems = await fetchAll();
     if(newItems && newItems.length > 0) {
-      CACHE.items = newItems;
+      // If new fetch has no GitHub items but old cache did, preserve them
+      const newGithub = newItems.filter(i => i.src === "GitHub");
+      const oldGithub = CACHE.items.filter(i => i.src === "GitHub");
+      if(newGithub.length === 0 && oldGithub.length > 0) {
+        console.log("⚠️ GitHub fetch returned 0 — preserving previous GitHub items");
+        CACHE.items = [...newItems, ...oldGithub];
+      } else {
+        CACHE.items = newItems;
+      }
       CACHE.lastFetch = Date.now();
-      DIGEST_CACHE = { data: null, ts: 0 }; // invalidate digest on auto-refresh
+      DIGEST_CACHE = { data: null, ts: 0 };
       console.log(`✅ Cache refreshed — ${CACHE.items.length} items`);
     } else {
       console.log("⚠️ fetchAll returned empty — keeping existing cache");
