@@ -939,7 +939,33 @@ Reply with ONLY the 2-sentence summary.`;
     });
 
     const categories = (await Promise.all(categoryPromises)).filter(Boolean);
-    const digest = { categories, generatedAt: new Date().toISOString(), feedAge: Math.round((Date.now() - CACHE.lastFetch)/1000) };
+    let intro = "";
+    try {
+      const top5 = categories
+        .flatMap(c => c.items || [])
+        .sort((a, b) => (b.heat || 0) - (a.heat || 0))
+        .slice(0, 5)
+        .map(i => i.title)
+        .join("\n");
+
+      const introRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: `You are the founder of an AI news product writing a 2-sentence daily intro for developers who build with AI. Given today's top stories, name the ONE thing that actually matters today and why a builder should care. Be direct, no hype, no fluff. Write in first person like a human, not a bot.\n\nTop stories:\n${top5}\n\nReturn ONLY the 2 sentences. Nothing else.` }],
+          max_tokens: 80,
+          temperature: 0.5
+        }),
+        signal: AbortSignal.timeout(10000)
+      });
+      const introData = await introRes.json();
+      intro = introData.choices?.[0]?.message?.content?.trim() || "";
+    } catch(e) {
+      console.warn("Intro generation failed:", e.message);
+    }
+
+    const digest = { intro, categories, generatedAt: new Date().toISOString(), feedAge: Math.round((Date.now() - CACHE.lastFetch)/1000) };
     DIGEST_CACHE = { data:digest, ts:Date.now() };
     res.json(digest);
   } catch(e) {
