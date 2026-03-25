@@ -219,7 +219,7 @@ async function fetchHN() {
     fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, {signal:AbortSignal.timeout(6000)}).then(r=>r.json())
   ));
   return rows
-    .filter(r => r.status==="fulfilled" && r.value?.title && isAI(r.value.title+(r.value.text||"")))
+    .filter(r => r.status==="fulfilled" && r.value?.title && isAI(r.value.title))
     .map(({value:s}) => ({
       id:`hn-${s.id}`, src:"HN", type:"discuss", tags:guessTags(s.title), title:s.title,
       sum: s.text ? safeText(s.text).slice(0,220)+"…" : "Discussion on Hacker News.",
