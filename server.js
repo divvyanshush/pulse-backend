@@ -953,9 +953,9 @@ Reply with ONLY the 2-sentence summary.`;
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.GROQ_API_KEY}` },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: `You are the founder of an AI news product writing a 2-sentence daily intro for developers who build with AI. Given today's top stories, name the ONE thing that actually matters today and why a builder should care. Be direct, no hype, no fluff. Write in first person like a human, not a bot.\n\nTop stories:\n${top5}\n\nReturn ONLY the 2 sentences. Nothing else.` }],
-          max_tokens: 80,
-          temperature: 0.5
+          messages: [{ role: "user", content: `You are writing a 2-sentence intro for a daily AI brief. Today's top stories are listed below. Pick the ONE story that actually matters to developers building AI products. Write it like a human talking to another developer — short, direct, no "as I review" or AI-sounding phrases. Just say what it is and why it matters. No fluff.\n\nTop stories:\n${top5}\n\nReturn ONLY 2 sentences. No intro, no sign-off.` }],
+          max_tokens: 120,
+          temperature: 0.7
         }),
         signal: AbortSignal.timeout(10000)
       });
