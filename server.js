@@ -335,7 +335,7 @@ async function fetchRSS(url, src, srcLabel, aiOnly=false, customHeaders={}) {
     : parser;
   const feed = await feedParser.parseURL(url);
   return (feed.items||[]).slice(0, 20)
-    .filter(e => aiOnly || isAI((e.title||"")+(e.contentSnippet||e.summary||"")))
+    .filter(e => aiOnly || isAI(e.title||""))
     .map(e=>({
       id:`${src.toLowerCase().replace(/\s/g,"-")}-${Buffer.from(e.link||e.title||"").toString("base64").slice(0,32)}`,
       src, srcLabel:srcLabel||src, type:guessType(e.title||"", e.contentSnippet||e.summary||""), tags:guessTags(e.title||"", e.contentSnippet||e.summary||""),
