@@ -886,6 +886,7 @@ app.get("/digest", async (req, res) => {
       { id:"model",    label:"Models & Releases" },
       { id:"research", label:"Research & Papers"  },
       { id:"tool",     label:"Tools & Libraries"  },
+      { id:"repo",     label:"Repos & Projects"   },
       { id:"discuss",  label:"Community"           },
       { id:"funding",  label:"Funding & Business"  },
     ];
@@ -902,7 +903,7 @@ app.get("/digest", async (req, res) => {
 
     const categoryPromises = CATS.map(async (cat) => {
       const catItems = (grouped[cat.id] || []).slice(0,15);
-      if(catItems.length < 2) return null;
+      if(catItems.length < 1) return null;
       const topItems = catItems.slice(0,8);
       const prompt = `You are a staff engineer giving a 30-second briefing on today's ${cat.label}.
 
@@ -911,10 +912,11 @@ ${topItems.map((i,idx) => `${idx+1}. ${i.title}${i.sum ? " — " + i.sum.slice(0
 
 Rules:
 - Name specific projects, models, or papers — no vague references
-- Say what actually happened, not "there is a trend of..."
-- Tell builders one concrete thing to do or watch
-- Max 2 sentences
+- First sentence: what happened, be specific
+- Second sentence: what a developer should actually do — try it, watch it, read it, skip it
+- Max 2 sentences, no filler
 - No hype words: revolutionary, groundbreaking, exciting, significant
+- Write like a senior dev talking to another dev, not a newsletter
 
 Reply with ONLY the 2-sentence summary.`;
       try {
