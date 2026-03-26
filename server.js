@@ -873,7 +873,7 @@ app.get("/digest", async (req, res) => {
   try {
     const items = CACHE.items || [];
     const now = Math.floor(Date.now()/1000);
-    const recent = items.filter(i => now - (i.time||0) < 86400);
+    const recent = items.filter(i => now - (i.time||0) < 172800);
 
     const normalize = type => {
       if(type==="product") return "tool";
