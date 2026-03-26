@@ -354,13 +354,13 @@ const RSS_SOURCES = [
   { url:"https://techcrunch.com/category/artificial-intelligence/feed/", src:"TechCrunch", label:"TechCrunch AI", aiOnly:true },
   { url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", src:"TheVerge", label:"The Verge AI", aiOnly:true },
   { url:"https://www.wired.com/feed/tag/ai/latest/rss",   src:"Wired",       label:"Wired AI",       aiOnly:true },
-  { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review", aiOnly:false },
+  { url:"https://www.technologyreview.com/feed/",         src:"MITReview",   label:"MIT Tech Review", aiOnly:true },
   { url:"https://simonwillison.net/atom/everything/",     src:"SimonW",      label:"Simon Willison",  aiOnly:true },
   { url:"https://www.interconnects.ai/feed",              src:"Interconnects",label:"Interconnects",  aiOnly:true },
   { url:"https://blogs.microsoft.com/ai/feed/",           src:"Microsoft",   label:"Microsoft AI",    aiOnly:true },
-  { url:"https://towardsdatascience.com/feed",            src:"TDS",         label:"Towards Data Science", aiOnly:false },
+  { url:"https://towardsdatascience.com/feed",            src:"TDS",         label:"Towards Data Science", aiOnly:true },
   { url:"https://www.marktechpost.com/feed/",             src:"MarkTechPost", label:"MarkTechPost",   aiOnly:true },
-  { url:"https://bdtechtalks.com/feed/",                  src:"TechTalks",   label:"BD Tech Talks",   aiOnly:false },
+  { url:"https://bdtechtalks.com/feed/",                  src:"TechTalks",   label:"BD Tech Talks",   aiOnly:true },
   { url:"https://thesequence.substack.com/feed",          src:"TheSequence", label:"The Sequence",    aiOnly:true },
   { url:"https://lastweekin.ai/feed",                     src:"LastWeekInAI",label:"Last Week in AI", aiOnly:true },
   { url:"https://importai.substack.com/feed",             src:"ImportAI",    label:"Import AI",       aiOnly:true },
@@ -369,8 +369,8 @@ const RSS_SOURCES = [
   { url:"https://magazine.sebastianraschka.com/feed", src:"Raschka", label:"Sebastian Raschka", aiOnly:true },
   { url:"https://lilianweng.github.io/index.xml", src:"LilianWeng", label:"Lilian Weng", aiOnly:true },
   { url:"https://blog.langchain.dev/rss/", src:"LangChain", label:"LangChain Blog", aiOnly:true },
-  { url:"https://www.lesswrong.com/feed.xml", src:"LessWrong", label:"LessWrong", aiOnly:false },
-  { url:"https://alignmentforum.org/feed.xml", src:"AlignmentForum", label:"Alignment Forum", aiOnly:false },
+  { url:"https://www.lesswrong.com/feed.xml", src:"LessWrong", label:"LessWrong", aiOnly:true },
+  { url:"https://alignmentforum.org/feed.xml", src:"AlignmentForum", label:"Alignment Forum", aiOnly:true },
 ];
 
 
