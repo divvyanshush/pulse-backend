@@ -884,8 +884,8 @@ app.get("/digest", async (req, res) => {
 
     const CATS = [
       { id:"model",    label:"Models & Releases" },
-      { id:"research", label:"Research & Papers"  },
       { id:"tool",     label:"Tools & Libraries"  },
+      { id:"research", label:"Research & Papers"  },
       { id:"repo",     label:"Repos & Projects"   },
       { id:"discuss",  label:"Community"           },
       { id:"funding",  label:"Funding & Business"  },
